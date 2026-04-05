@@ -1,5 +1,6 @@
 class Queue {
 #items = [];
+#counter = 0;
 
 #parent(i) { return Math.floor((i - 1) / 2); }
 #left(i) { return 2 * i + 1; }
@@ -10,8 +11,8 @@ class Queue {
 }
 
 enqueue(item, priority) {
-    this.#items.push({ item, priority });
-    this.#raise(this.#items.length - 1);
+  this.#items.push({item, priority, order: this.#counter++});
+  this.#raise(this.#items.length - 1);
 }
 
 dequeue() {
@@ -60,20 +61,39 @@ dequeue() {
     }
 }
 
-peek(mode = "highest") {
-    if (this.#items.length === 0) return null;
-
-    if (mode === "highest") {
-        return this.#items.reduce((max, n) =>
-        n.priority > max.priority ? n : max
-        );
-    }
+#findItem(mode) {
+    if (mode === "highest") return this.#items[0];
 
     if (mode === "lowest") {
         return this.#items.reduce((min, n) =>
         n.priority < min.priority ? n : min
         );
     }
+
+    if (mode === "oldest") {
+        return this.#items.reduce((old, n) =>
+        n.order < old.order ? n : old
+        );
+    }
+
+    if (mode === "newest") {
+        return this.#items.reduce((nw, n) =>
+        n.order > nw.order ? n : nw
+        );
+    }
+}
+
+ peek(mode) {
+    const n = this.#findItem(mode);
+    return n ? { item: n.item, priority: n.priority } : null;
+}
+
+#extractItem(mode) {
+    const target = this.#findItem(mode);
+    const id = this.#items.indexOf(target);
+
+    this.#items.splice(id, 1);
+    return target;
 }
 
 }
