@@ -11,22 +11,15 @@ class Queue {
 }
 
 enqueue(item, priority) {
-  this.#items.push({item, priority, order: this.#counter++});
-  this.#raise(this.#items.length - 1);
+    if (typeof priority !== "number") throw new TypeError("priority error!!!!!!!!!");
+    this.#items.push({item, priority, order: this.#counter++});
+    this.#raise(this.#items.length - 1);
 }
 
-dequeue() {
-    if (this.#items.length === 0) return null;
-
-    const root = this.#items[0];
-    const last = this.#items.pop();
-
-    if (this.#items.length > 0) {
-        this.#items[0] = last;
-        this.#lower(0);
-    }
-
-    return root;
+dequeue(mode = "highest") {
+    if (this.isEmpty()) return null;
+    const n = this.#extractItem(mode);
+    return n ? { item: n.item, priority: n.priority } : null;
 }
 
 #raise(i) {
@@ -62,28 +55,18 @@ dequeue() {
 }
 
 #findItem(mode) {
-    if (mode === "highest") return this.#items[0];
-
-    if (mode === "lowest") {
-        return this.#items.reduce((min, n) =>
-        n.priority < min.priority ? n : min
-        );
-    }
-
-    if (mode === "oldest") {
-        return this.#items.reduce((old, n) =>
-        n.order < old.order ? n : old
-        );
-    }
-
-    if (mode === "newest") {
-        return this.#items.reduce((nw, n) =>
-        n.order > nw.order ? n : nw
-        );
+    switch (mode) {
+        case "highest": return this.#items[0];
+        case "lowest":  return this.#items.reduce((min, n) => n.priority < min.priority ? n : min);
+        case "oldest":  return this.#items.reduce((old, n) => n.order < old.order ? n : old);
+        case "newest":  return this.#items.reduce((nEw,  n) => n.order > nEw.order  ? n : nEw);
+        default: throw new Error(`Use: highest/lowest/oldest/newest`);
     }
 }
 
- peek(mode) {
+peek(mode = "highest") {
+    if (this.isEmpty()) return null;
+    
     const n = this.#findItem(mode);
     return n ? { item: n.item, priority: n.priority } : null;
 }
@@ -92,17 +75,16 @@ dequeue() {
     const target = this.#findItem(mode);
     const id = this.#items.indexOf(target);
 
-    this.#items.splice(id, 1);
+    const last = this.#items.length - 1;
+    this.#swap(id, last);
+    this.#items.pop();
+
+    if (id < this.#items.length) {
+        this.#raise(id);
+        this.#lower(id);
+    }
+
     return target;
 }
 
 }
-
-const q = new Queue();
-q.enqueue("Task A", 2); 
-q.enqueue("Task B", 5);
-q.enqueue("Task C", 1);
-q.dequeue();
-console.log(q.peek("highest"));
-console.log(q.peek("lowest"));
-
