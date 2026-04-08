@@ -39,13 +39,19 @@ return {
 };
 }
 
-function memoize(fn, maxSize = 2, policy = "LRU") {
+function memoize(fn, options = {}) {
+    const { maxSize = 2, policy = "LRU", ms = null } = options;
     const cache = new Map();
 
     return function (...args) {
         const key = JSON.stringify(args);
 
-        
+        let type;
+        if (policy === "TTL" || ms) {
+            type = EvictionType.TTL(ms);
+        } else {
+            type = EvictionType[policy];
+        }
 
         if (cache.has(key)) {
             console.log("Ja, Treffer!", args);
@@ -56,7 +62,7 @@ function memoize(fn, maxSize = 2, policy = "LRU") {
         }
 
         if (cache.size >= maxSize) {
-            cache.delete(EvictionType[policy](cache));
+            cache.delete(type(cache));
         }
 
         const result = fn(...args);
@@ -71,7 +77,10 @@ function func(num){
     return num * num;
 }
 
-const mf = memoize(func, 2, "LRU");
+const mf = memoize(func, { maxSize: 2, ms: 20 });
 console.log(mf(2));
 console.log(mf(3));
 console.log(mf(4));
+setTimeout(() => {
+    console.log(mf(4));
+}, 100);
