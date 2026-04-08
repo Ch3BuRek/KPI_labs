@@ -1,4 +1,4 @@
-const EvictionType = {
+export const EvictionType = {
     LRU: (cache) => {
     let oldestKey = null, oldestTime = Infinity;
         for (const [key, entry] of cache) {
@@ -28,9 +28,11 @@ const EvictionType = {
         }
         return EvictionType.LRU(cache);
     },
+
+    CUSTOM: (evictFn) => evictFn,
 };
 
-function createEntry(value) {
+export function createEntry(value) {
 return {
     value,
     frequency: 1,
@@ -39,18 +41,25 @@ return {
 };
 }
 
-function memoize(fn, options = {}) {
+export function memoize(fn, options = {}) {
     const { maxSize = 2, policy = "LRU", ms = null } = options;
     const cache = new Map();
 
-    return function (...args) {
-        const key = JSON.stringify(args);
-
-        let type;
+    let type;
         if (policy === "TTL" || ms) {
             type = EvictionType.TTL(ms);
         } else {
             type = EvictionType[policy];
+        }
+
+    return function (...args) {
+        const key = JSON.stringify(args);
+
+        if (policy === "TTL" && ms && cache.has(key)) {
+            const entry = cache.get(key);
+            if (Date.now() - entry.createdAt >= ms) {
+                cache.delete(key);
+            }
         }
 
         if (cache.has(key)) {
@@ -72,15 +81,3 @@ function memoize(fn, options = {}) {
         return result;
     };
 }
-
-function func(num){
-    return num * num;
-}
-
-const mf = memoize(func, { maxSize: 2, ms: 20 });
-console.log(mf(2));
-console.log(mf(3));
-console.log(mf(4));
-setTimeout(() => {
-    console.log(mf(4));
-}, 100);
