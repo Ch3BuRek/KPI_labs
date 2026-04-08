@@ -16,7 +16,4 @@ mf(1);
 mf(10);
 mf(100);
 mf(1000);
-mf(1);
-mf(10);
-mf(100);
-mf(1000);
+console.log(mf.cache);

@@ -42,17 +42,19 @@ return {
 }
 
 export function memoize(fn, options = {}) {
-    const { maxSize = 2, policy = "LRU", ms = null } = options;
+    const { maxSize = 2, policy = "LRU", ms = null, customEvict = null } = options;
     const cache = new Map();
 
     let type;
         if (policy === "TTL" || ms) {
             type = EvictionType.TTL(ms);
+        }else if (policy === "CUSTOM" && customEvict) {
+            type = EvictionType.CUSTOM(customEvict);
         } else {
             type = EvictionType[policy];
         }
 
-    return function (...args) {
+    function innerMemo (...args) {
         const key = JSON.stringify(args);
 
         if (policy === "TTL" && ms && cache.has(key)) {
@@ -80,4 +82,15 @@ export function memoize(fn, options = {}) {
 
         return result;
     };
+    innerMemo.cache = cache;
+    innerMemo.clear = () => cache.clear();
+    innerMemo.stats = () => ({
+        size: cache.size,
+        keys: [...cache.keys()],
+        entries: Object.fromEntries(
+        [...cache.entries()].map(([m, n]) => [m, { ...n }])
+        ),
+    });
+
+    return innerMemo;
 }
