@@ -2,6 +2,30 @@ import { menu } from "../backend/data.js";
 
 const $ = id => document.getElementById(id);
 
+//----------------------------------------------------------------------
+let cart = [];
+
+function addToCart(id) {
+    const item = menu.find(i => i.id === id);
+    if (!item) return;
+
+    const existing = cart.find(c => c.id === id);
+
+    if (existing) {
+        existing.quantity++;
+    } else {
+        cart.push({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: 1
+        });
+    }
+
+    renderCart();
+}
+
+//----------------------------------------------------------------------
 function renderCategories() {
     const categories = [...new Set(menu.map(i => i.category))];
 
@@ -15,6 +39,7 @@ function renderCategories() {
     });
 }
 
+//----------------------------------------------------------------------
 function renderMenu(category) {
     const items = category
     ? menu.filter(i => i.category === category)
@@ -28,6 +53,20 @@ function renderMenu(category) {
             <span class="menu-card-price">$${item.price.toFixed(2)}</span>
             <button class="add-btn" data-id="${item.id}">+</button>
         </div>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.addEventListener('click', () => addToCart(btn.dataset.id));
+    });
+}
+
+function renderCart() {
+    $('cart-count').textContent = cart.length;
+
+    $('cart-items').innerHTML = cart.map(item => `
+        <div>
+            ${item.name} x${item.quantity}
         </div>
     `).join('');
 }

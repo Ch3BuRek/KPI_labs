@@ -10,6 +10,9 @@
 
 <header>
     <div>logo</div>
+    <button id="cart-btn" class="cart-btn">
+        Cart (<span id="cart-count">0</span>)
+    </button>
 </header>
 
 <main class="page"> 
@@ -19,7 +22,16 @@
             <div class="cat-tabs" id="cat-tabs"></div>
         </div>
         <div class="menu-grid" id="menu-grid">menu here</div>
-  </section>
+    </section>
+
+    <aside class="cart-panel" id="cart-panel">
+        <h3>Your order</h3>
+        <div id="cart-items" class="cart-items">
+            <p class="empty">No items added yet...</p>
+        </div>
+
+        <button id="place-order-btn" class="btn-primary" disabled>Place order</button>
+    </aside>
 </main>
 
 <script type="module" src="index.js"></script>
