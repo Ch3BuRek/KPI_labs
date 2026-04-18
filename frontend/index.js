@@ -6,10 +6,10 @@ const $ = id => document.getElementById(id);
 let cart = [];
 
 function addToCart(id) {
-    const item = menu.find(i => i.id === id);
+    const item = menu.find(i => i.id == id);
     if (!item) return;
 
-    const existing = cart.find(c => c.id === id);
+    const existing = cart.find(c => c.id == id);
 
     if (existing) {
         existing.quantity++;
@@ -56,17 +56,24 @@ function renderMenu(category) {
         </div>
     `).join('');
 
-    document.querySelectorAll('.add-btn').forEach(btn => {
+    $('menu-grid').querySelectorAll('.add-btn').forEach(btn => {
         btn.addEventListener('click', () => addToCart(btn.dataset.id));
     });
 }
 
 function renderCart() {
-    $('cart-count').textContent = cart.length;
+    $('cart-count').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-    $('cart-items').innerHTML = cart.map(item => `
-        <div>
-            ${item.name} x${item.quantity}
+    if (cart.length === 0) {
+        $('cart-items').innerHTML = "<p>Cart is empty</p>";
+        return;
+    }
+
+  $('cart-items').innerHTML = cart.map(item => `
+        <div class="cart-item">
+            <span>${item.name}</span>
+            <span>x${item.quantity}</span>
+            <span>$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
     `).join('');
 }
