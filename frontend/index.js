@@ -30,8 +30,8 @@ function renderCategories() {
     const categories = [...new Set(menu.map(i => i.category))];
 
     $('cat-tabs').innerHTML =
-    `<button data-cat="">All</button>` +
-    categories.map(cat =>`<button data-cat="${cat}">${cat}</button>`).join('');
+    `<button class="cat-tab active" data-cat="">All</button>` +
+    categories.map(cat =>`<button class="cat-tab" data-cat="${cat}">${cat}</button>`).join('');
 
 
     $('cat-tabs').querySelectorAll('button').forEach(btn => {
