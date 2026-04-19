@@ -69,14 +69,55 @@ function renderCart() {
         return;
     }
 
-  $('cart-items').innerHTML = cart.map(item => `
+    $('cart-items').innerHTML = cart.map(item => `
         <div class="cart-item">
             <span>${item.name}</span>
-            <span>x${item.quantity}</span>
+            <div>
+                <button data-id="${item.itemId}" data-action="decrease">-</button>
+                <span>${item.quantity}</span>
+                <button data-id="${item.itemId}" data-action="increase">+</button>
+            </div>
             <span>$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
     `).join('');
+
+    document.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = cart.find(c => c.id === Number(btn.dataset.id));
+
+            if (btn.dataset.action === 'decrease') item.quantity--;
+            if (btn.dataset.action === 'increase') item.quantity++;
+
+            cart = cart.filter(i => i.quantity > 0);
+            renderCart();
+        });
+    });
+
+    fetchTotals();
+    $('place-order-btn').disabled = !$('address-input').value.trim();
 }
+
+function fetchTotals() {
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const serviceFee = subtotal * 0.05;
+    const total = subtotal + serviceFee;
+
+    const t = { subtotal, serviceFee, total };
+
+    $('cart-totals').classList.remove('hidden');
+    $('cart-totals').innerHTML = `
+        <span>Subtotal</span><span>$${t.subtotal.toFixed(2)}</span>
+        <span>Service fee (5%)</span><span>$${t.serviceFee.toFixed(2)}</span>
+        <span>Total</span><span>$${t.total.toFixed(2)}</span>
+    `;
+}
+
+$('place-order-btn').addEventListener('click', () => {
+    alert(`Order placed`);
+    cart = [];
+    renderCart();
+});
 
 renderCategories();
 renderMenu();
