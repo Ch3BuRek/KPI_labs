@@ -66,6 +66,8 @@ function renderCart() {
 
     if (cart.length === 0) {
         $('cart-items').innerHTML = "<p>Cart is empty</p>";
+        $('cart-totals').classList.add('hidden');
+        $('place-order-btn').disabled = true;
         return;
     }
 
@@ -112,6 +114,10 @@ function fetchTotals() {
         <div class="total-row grand"><span>Total</span><span>$${t.total.toFixed(2)}</span></div>
     `;
 }
+
+$('address-input').addEventListener('input', () => {
+    $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
+});
 
 $('place-order-btn').addEventListener('click', () => {
     alert(`Order placed`);
