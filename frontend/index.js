@@ -6,10 +6,10 @@ const $ = id => document.getElementById(id);
 let cart = [];
 
 function addToCart(id) {
-    const item = menu.find(i => i.id == id);
+    const item = menu.find(i => i.id === id);
     if (!item) return;
 
-    const existing = cart.find(c => c.id == id);
+    const existing = cart.find(c => c.id === id);
 
     if (existing) {
         existing.quantity++;
@@ -71,30 +71,30 @@ function renderCart() {
 
     $('cart-items').innerHTML = cart.map(item => `
         <div class="cart-item">
-            <span>${item.name}</span>
-            <div>
-                <button data-id="${item.itemId}" data-action="decrease">-</button>
-                <span>${item.quantity}</span>
-                <button data-id="${item.itemId}" data-action="increase">+</button>
+            <span class="cart-item-name">${item.name}</span>
+            <div class="cart-item-qty">
+                <button class="qty-btn" data-id="${item.id}" data-action="decrease">-</button>
+                <span class="cart-item-count">${item.quantity}</span>
+                <button class="qty-btn" data-id="${item.id}" data-action="increase">+</button>
             </div>
-            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+            <span class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
     `).join('');
 
-    document.querySelectorAll('[data-action]').forEach(btn => {
+    $('cart-items').querySelectorAll('.qty-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const item = cart.find(c => c.id === Number(btn.dataset.id));
+            const item = cart.find(c => c.id === btn.dataset.id);
 
-            if (btn.dataset.action === 'decrease') item.quantity--;
             if (btn.dataset.action === 'increase') item.quantity++;
+            else item.quantity = Math.max(0, item.quantity - 1);
 
-            cart = cart.filter(i => i.quantity > 0);
+            cart = cart.filter(c => c.quantity > 0);
             renderCart();
         });
-    });
+    }); 
 
-    fetchTotals();
-    $('place-order-btn').disabled = !$('address-input').value.trim();
+  fetchTotals();
+  $('place-order-btn').disabled = !$('address-input').value.trim();
 }
 
 function fetchTotals() {
@@ -107,9 +107,9 @@ function fetchTotals() {
 
     $('cart-totals').classList.remove('hidden');
     $('cart-totals').innerHTML = `
-        <span>Subtotal</span><span>$${t.subtotal.toFixed(2)}</span>
-        <span>Service fee (5%)</span><span>$${t.serviceFee.toFixed(2)}</span>
-        <span>Total</span><span>$${t.total.toFixed(2)}</span>
+        <div class="total-row"><span>Subtotal</span><span>$${t.subtotal.toFixed(2)}</span></div>
+        <div class="total-row"><span>Service fee (5%)</span><span>$${t.serviceFee.toFixed(2)}</span></div>
+        <div class="total-row grand"><span>Total</span><span>$${t.total.toFixed(2)}</span></div>
     `;
 }
 
