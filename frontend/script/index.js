@@ -1,4 +1,4 @@
-import { menu } from "../backend/data.js";
+import { menu } from "../../backend/data.js";
 
 const $ = id => document.getElementById(id);
 
