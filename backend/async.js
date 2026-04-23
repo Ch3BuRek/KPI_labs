@@ -3,30 +3,43 @@ function async(arr, fn, done, signal) {
     let completed = 0;
     let aborted = false;
 
-    arr.forEach((item, i) => {
+    arr.forEach((item, index) => {
         console.log(`in i=${item}`);
 
-        fn(item, i, (err, result) => {
-        console.log(`back i=${item}`);
-            if (signal?.aborted) {
-                console.log("aborting");
-                return done(new Error("aborted"));
+        if (signal?.aborted || aborted) {
+            if (!aborted) {
+                aborted = true;
+                done(new Error("aborted"), null);
+            }
+            return;
+        }
+
+        fn(item, index, (err, result) => {
+            console.log(`back i=${item}`);
+            if (signal?.aborted || aborted) {
+                if (!aborted) {
+                    aborted = true;
+                    done(new Error("aborted"), null);
+                }
+                return;
             }
             
-            if (err) return done(err);
+            if (err) {
+                aborted = true;
+                return done(err, null);
+            }
 
-            results[i] = result;
+            results[index] = result;
             completed++;
 
             if (completed === arr.length) {
-                console.log("done");
                 done(null, results);
             }
         });
     });
 }
 
-function slowFn(x, i, callback) {
+function slowFn(x, index, callback) {
     setTimeout(() => {
         console.log(`slowFn i=${x}`);
         callback(null, x * 2);
