@@ -70,6 +70,21 @@ function asyncPromise(arr, fn, signal) {
     });
 }
 
+async function asyncAwait(arr, fn, signal) {
+    if (signal?.aborted) throw new Error("Operation aborted");
+    if (arr.length === 0) return [];
+
+    const results = [];
+
+    for (let i = 0; i < arr.length; i++) {
+        if (signal?.aborted) throw new Error("Operation aborted");
+        const result = await fn(arr[i], i);
+        results.push(result);
+    }
+
+    return results;
+}
+
 function slowFn(x, index, callback) {
     setTimeout(() => {
         console.log(`slowFn i=${x}`);
@@ -77,10 +92,18 @@ function slowFn(x, index, callback) {
     }, 100);
 }
 
-const controller = new AbortController();
+(async () => {
+    const controller = new AbortController();
 
-asyncPromise([1, 2, 3], (x) => slowFn(x, 300), controller.signal)
-.then(results => console.log("Results:", results))
-.catch(err => console.error("Error:", err.message));
+    setTimeout(() => {
+        console.log("aborting...");
+        controller.abort();
+    }, 250);
 
-setTimeout(() => controller.abort(), 50);
+    try {
+        const results = await asyncPromise([1, 2, 3], (x) => slowFn(x, 100), controller.signal);
+        console.log("results", results);
+    } catch (err) {
+        console.error("error", err.message);
+    }
+})();
