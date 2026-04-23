@@ -39,6 +39,37 @@ function async(arr, fn, done, signal) {
     });
 }
 
+function asyncPromise(arr, fn, signal) {
+
+    return new Promise((resolve, reject) => {
+
+        if (signal?.aborted) {
+            return reject(new Error("Operation aborted"));
+        }
+        
+        const onAbort = () => {
+            console.log("abort, promise rejected");
+            reject(new Error("aborted"));
+        };
+
+        signal?.addEventListener("abort", onAbort, { once: true });
+
+        const promises = arr.map((item, index) => {
+            return fn(item, index);
+        });
+
+         Promise.all(promises)
+        .then(res => {
+            console.log("resolved");
+            resolve(res);
+        })
+        .catch(err => {
+            console.log("rejected");
+            reject(err);
+        });
+    });
+}
+
 function slowFn(x, index, callback) {
     setTimeout(() => {
         console.log(`slowFn i=${x}`);
@@ -48,6 +79,8 @@ function slowFn(x, index, callback) {
 
 const controller = new AbortController();
 
-setTimeout(() => controller.abort(), 50);
+asyncPromise([1, 2, 3], (x) => slowFn(x, 300), controller.signal)
+.then(results => console.log("Results:", results))
+.catch(err => console.error("Error:", err.message));
 
-async([1,2,3], slowFn, console.log, controller.signal);
+setTimeout(() => controller.abort(), 50);
