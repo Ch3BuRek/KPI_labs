@@ -3,9 +3,9 @@ function async(arr, fn, done, signal) {
     let completed = 0;
     let aborted = false;
 
-    arr.forEach((item, index) => {
-        console.log(`in i=${item}`);
+    if (arr.length === 0) return done(null, []);
 
+    arr.forEach((item, index) => {
         if (signal?.aborted || aborted) {
             if (!aborted) {
                 aborted = true;
@@ -15,7 +15,6 @@ function async(arr, fn, done, signal) {
         }
 
         fn(item, index, (err, result) => {
-            console.log(`back i=${item}`);
             if (signal?.aborted || aborted) {
                 if (!aborted) {
                     aborted = true;
@@ -37,39 +36,44 @@ function async(arr, fn, done, signal) {
             }
         });
     });
+
+    signal?.addEventListener("abort", () => {
+        if (!aborted) {
+            aborted = true;
+            done(new Error("aborted"), null);
+        }
+    });
 }
 
+//----------------------------------------------------------------------
 function asyncPromise(arr, fn, signal) {
 
     return new Promise((resolve, reject) => {
 
-        if (signal?.aborted) {
-            return reject(new Error("Operation aborted"));
-        }
+        if (signal?.aborted) return reject(new Error("aborted"));
+        if (arr.length === 0) return resolve([]);
         
-        const onAbort = () => {
-            console.log("abort, promise rejected");
-            reject(new Error("aborted"));
-        };
-
+        const onAbort = () => reject(new Error("aborted"));
         signal?.addEventListener("abort", onAbort, { once: true });
 
         const promises = arr.map((item, index) => {
+            if (signal?.aborted) return Promise.reject(new Error("aborted"));
             return fn(item, index);
         });
 
          Promise.all(promises)
         .then(res => {
-            console.log("resolved");
+            signal?.removeEventListener("abort", onAbort);
             resolve(res);
         })
         .catch(err => {
-            console.log("rejected");
+            signal?.removeEventListener("abort", onAbort);
             reject(err);
         });
     });
 }
 
+//----------------------------------------------------------------------
 async function asyncAwait(arr, fn, signal) {
     if (signal?.aborted) throw new Error("Operation aborted");
     if (arr.length === 0) return [];
@@ -85,25 +89,4 @@ async function asyncAwait(arr, fn, signal) {
     return results;
 }
 
-function slowFn(x, index, callback) {
-    setTimeout(() => {
-        console.log(`slowFn i=${x}`);
-        callback(null, x * 2);
-    }, 100);
-}
-
-(async () => {
-    const controller = new AbortController();
-
-    setTimeout(() => {
-        console.log("aborting...");
-        controller.abort();
-    }, 250);
-
-    try {
-        const results = await asyncPromise([1, 2, 3], (x) => slowFn(x, 100), controller.signal);
-        console.log("results", results);
-    } catch (err) {
-        console.error("error", err.message);
-    }
-})();
+//----------------------------------------------------------------------
