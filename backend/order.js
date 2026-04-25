@@ -28,6 +28,14 @@ export function createOrder({ cart, customerName, deliveryAddress }) {
     return order;
 }
 
+export function getOrder(id) {
+    return orders.get(id) || null;
+}
+
+export function getAllOrders() {
+    return [...orders.values()];
+}
+
 export function updateOrderStatus(id, newStatus) {
     const order = orders.get(id);
     if (!order) {

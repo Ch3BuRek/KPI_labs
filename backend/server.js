@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { menu } from './data.js';
-import { createOrder, updateOrderStatus } from './order.js';
+import { createOrder, getOrder, getAllOrders, updateOrderStatus } from './order.js';
 
 const app = express();
 app.use(express.json());
@@ -30,6 +30,17 @@ app.patch('/data/orders/:id/status', (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+
+app.get('/data/orders', (req, res) => {
+  res.json(getAllOrders());
+});
+
+app.get('/data/orders/:id', (req, res) => {
+  const order = getOrder(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  res.json(order);
+});
+
 
 
 app.listen(3000);
