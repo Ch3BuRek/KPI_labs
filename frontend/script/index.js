@@ -126,6 +126,9 @@ function fetchTotals() {
 $('place-order-btn').addEventListener('click', async () => {
     const address = $('address-input').value.trim();
 
+    $('place-order-btn').disabled = true;
+    $('place-order-btn').textContent = 'Placing...';
+
     try {
         const res   = await fetch('/data/order', {
             method:  'POST',
@@ -134,15 +137,43 @@ $('place-order-btn').addEventListener('click', async () => {
         });
 
         const order = await res.json();
-        alert(`Order ID: ${order.id}`);
-        cart = [];
 
+        showConfirmation(order);
+
+        cart = [];
         renderCart();
+
     } catch (err) {
         alert('Fail');
-        console.error(err);
+    } finally {
+        $('place-order-btn').textContent = 'Place Order';
     }
 });
+
+function showConfirmation(order) {
+    const panel = $('cart-panel');
+    panel.innerHTML = `
+        <div class="confirmation">
+            <h3>Order placed!</h3>
+            <p class="order-id">Order ID: <strong>${order.id}</strong></p>
+            <p>Delivering to: ${order.deliveryAddress}</p>
+            <div class="order-summary">
+                ${order.cart.map(i => `
+                    <div class="conf-item">
+                        <span>${i.name} x ${i.quantity}</span>
+                        <span>$${(i.price * i.quantity).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="conf-total">Total: $${order.total.toFixed(2)}</div>
+            <button id="new-order-btn" class="btn-primary">New Order</button>
+        </div>
+    `;
+
+    $('new-order-btn').addEventListener('click', () => {
+        location.reload();
+    });
+}
 
 $('address-input').addEventListener('input', () => {
     $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;

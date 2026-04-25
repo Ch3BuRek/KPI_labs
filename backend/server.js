@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { menu } from './data.js';
+import { createOrder, updateOrderStatus } from './order.js';
 
 const app = express();
 app.use(express.json());
@@ -13,23 +14,21 @@ app.get('/data/menu', (req, res) => {
 
 //----------------------------------------------------------------------
 app.post('/data/order', (req, res) => {
-    const { cart, customerName, deliveryAddress } = req.body;
-
-    if (!cart?.length || !deliveryAddress) {
-        return res.status(400);
+    try {
+        const order = createOrder(req.body);
+        res.json(order);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
+});
 
-    const order = {
-        id: `ORD-${Date.now()}`,
-        cart,
-        customerName,
-        deliveryAddress,
-        status: 'placed',
-        placedAt: new Date().toISOString(),
-    };
-
-    console.log(order);
-    res.json(order);
+app.patch('/data/orders/:id/status', (req, res) => {
+    try {
+        const order = updateOrderStatus(req.params.id, req.body.status);
+        res.json(order);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 

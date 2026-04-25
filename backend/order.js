@@ -1,6 +1,13 @@
-function placeOrder({ cart, customerName, deliveryAddress }) {
-    console.log("[placeOrder] start");
-    const orders = new Map();
+const orders = new Map();
+
+// ── valid statuses ────────────────────────────────────────────────────────────
+const STATUSES = ['placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+
+
+export function createOrder({ cart, customerName, deliveryAddress }) {
+    const subtotal   = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const serviceFee = subtotal * 0.05;
+    const total      = subtotal + serviceFee;
 
     const order = {
         id: `ORD-${Date.now()}`,
@@ -8,17 +15,28 @@ function placeOrder({ cart, customerName, deliveryAddress }) {
         customerName,
         deliveryAddress,
         status: "placed",
+        subtotal: +subtotal.toFixed(2),
+        serviceFee: +serviceFee.toFixed(2),
+        total: +total.toFixed(2),
         placedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     };
 
     orders.set(order.id, order);
-
-    console.log("[placeOrder] created:", order);
+    console.log(`order: ${order.id} — $${order.total}`);
+    
     return order;
 }
 
-placeOrder({
-    cart: [{ itemId: 1, quantity: 2 }],
-    customerName: "Ivan",
-    deliveryAddress: "Kyiv"
-});
+export function updateOrderStatus(id, newStatus) {
+    const order = orders.get(id);
+    if (!order) {
+        throw new Error(`Order ${id} not found`);
+    }
+
+    order.status    = newStatus;
+    order.updatedAt = new Date().toISOString();
+
+    console.log(`order ${id} → ${newStatus}`);
+    return order;
+}
