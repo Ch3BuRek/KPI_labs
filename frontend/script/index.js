@@ -1,12 +1,19 @@
-import { menu } from "../../backend/data.js";
-
 const $ = id => document.getElementById(id);
+let cart = [], menuData = [];
+
+async function init() {
+    const res  = await fetch('/data/menu');
+    menuData = await res.json();
+
+    renderCategories(menuData);
+    renderMenu(menuData, '');
+}
+
+init();
 
 //----------------------------------------------------------------------
-let cart = [];
-
 function addToCart(id) {
-    const item = menu.find(i => i.id === id);
+    const item = menuData.find(i => i.id === id);
     if (!item) return;
 
     const existing = cart.find(c => c.id === id);
@@ -26,8 +33,8 @@ function addToCart(id) {
 }
 
 //----------------------------------------------------------------------
-function renderCategories() {
-    const categories = [...new Set(menu.map(i => i.category))];
+function renderCategories(menu) {
+    const categories = [...new Set(menuData.map(i => i.category))];
 
     $('cat-tabs').innerHTML =
     `<button class="cat-tab active" data-cat="">All</button>` +
@@ -40,10 +47,10 @@ function renderCategories() {
 }
 
 //----------------------------------------------------------------------
-function renderMenu(category) {
+function renderMenu(category, menu) {
     const items = category
-    ? menu.filter(i => i.category === category)
-    : menu;
+    ? menuData.filter(i => i.category === category)
+    : menuData;
 
     $('menu-grid').innerHTML = items.map(item => `
         <div class="menu-card">
@@ -115,15 +122,30 @@ function fetchTotals() {
     `;
 }
 
+//----------------------------------------------------------------------
+$('place-order-btn').addEventListener('click', async () => {
+    const address = $('address-input').value.trim();
+
+    try {
+        const res   = await fetch('/data/order', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ cart, deliveryAddress: address }),
+        });
+
+        const order = await res.json();
+        alert(`Order ID: ${order.id}`);
+        cart = [];
+
+        renderCart();
+    } catch (err) {
+        alert('Fail');
+        console.error(err);
+    }
+});
+
 $('address-input').addEventListener('input', () => {
     $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
 });
 
-$('place-order-btn').addEventListener('click', () => {
-    alert(`Order placed`);
-    cart = [];
-    renderCart();
-});
-
-renderCategories();
-renderMenu();
+init();
