@@ -2,11 +2,15 @@ const $ = id => document.getElementById(id);
 let cart = [], menuData = [];
 
 async function init() {
-    const res  = await fetch('/data/menu');
-    menuData = await res.json();
+    const [menuRes, categoriesRes] = await Promise.all([
+        fetch('/data/menu'),
+        fetch('/data/categories'),
+    ]);
+    menuData = await menuRes.json();
+    const categories = await categoriesRes.json();
 
-    renderCategories(menuData);
-    renderMenu(menuData, '');
+    renderCategories(categories);
+    renderMenu('');
 }
 
 init();
@@ -33,16 +37,13 @@ function addToCart(id) {
 }
 
 //----------------------------------------------------------------------
-function renderCategories(menu) {
-    const categories = [...new Set(menuData.map(i => i.category))];
-
+function renderCategories(categories) {
     $('cat-tabs').innerHTML =
     `<button class="cat-tab active" data-cat="">All</button>` +
-    categories.map(cat =>`<button class="cat-tab" data-cat="${cat}">${cat}</button>`).join('');
-
+    categories.map(c => `<button class="cat-tab" data-cat="${c.id}">${c.name}</button>`).join('');
 
     $('cat-tabs').querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {renderMenu(btn.dataset.cat);});
+        btn.addEventListener('click', () => { renderMenu(btn.dataset.cat); });
     });
 }
 
@@ -178,5 +179,3 @@ function showConfirmation(order) {
 $('address-input').addEventListener('input', () => {
     $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
 });
-
-init();

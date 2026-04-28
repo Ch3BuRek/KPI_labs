@@ -1,4 +1,4 @@
-import { EventEmitter } from './event.js';
+import { EventEmitter } from './feautures/event.js';
 
 const orders = new Map();
 export const orderBus = new EventEmitter('OrderBus');

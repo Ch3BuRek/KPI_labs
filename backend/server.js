@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import { menu } from './data.js';
+import { menu, categories } from './data.js';
 import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './order.js';
+import { startSimulation } from './simulate.js';
 
 const app = express();
 app.use(express.json());
@@ -35,6 +36,10 @@ app.get('/data/orders', (req, res) => {
     res.json(getAllOrders());
 });
 
+app.get('/data/categories', (req, res) => {
+    res.json(categories);
+});
+
 app.get('/data/orders/:id/stream', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -57,4 +62,6 @@ app.get('/data/orders/:id/stream', (req, res) => {
     req.on('close', () => orderBus.off('orderUpdate', unsub));
 });
 
-app.listen(3000);
+app.listen(3000, () => {
+    startSimulation();
+});

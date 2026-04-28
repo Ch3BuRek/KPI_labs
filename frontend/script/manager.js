@@ -99,4 +99,4 @@ async function advanceStatus(id, newStatus) {
 
 //----------------------------------------------------------------------
 loadOrders();
-setInterval(loadOrders, 10_000);
+setInterval(loadOrders, 1_000);
