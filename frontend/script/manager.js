@@ -43,7 +43,7 @@ function renderOrderCard(order) {
     const isDone = order.status === 'delivered' || order.status === 'cancelled';
 
     return `
-        <div class="order-card" data-id="${order.id}">
+        <div class="order-card" data-id="${order.id}" data-status="${order.status}">
             <div class="order-card-head">
                 <span class="order-id">${order.id}</span>
                 <span class="order-status" ">${order.status}</span>

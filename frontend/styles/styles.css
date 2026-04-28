@@ -249,3 +249,102 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   background: var(--surface);
   flex-shrink: 0;
 }
+
+/*-----------------------------------------------------------------------*/
+
+.kitchen-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.orders-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* color the left border by status */
+.order-card[data-status="placed"]    { border-left-color: #2980b9; }
+.order-card[data-status="confirmed"] { border-left-color: #8e44ad; }
+.order-card[data-status="preparing"] { border-left-color: #e67e22; }
+.order-card[data-status="ready"]     { border-left-color: #27ae60; }
+.order-card[data-status="delivered"] { border-left-color: var(--border); opacity: 0.6; }
+.order-card[data-status="cancelled"] { border-left-color: var(--red);    opacity: 0.5; }
+
+.order-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.order-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text-3);
+}
+
+/* status badge colors */
+.order-card[data-status="placed"]    .order-status { background: #d6eaf8; color: #1a5276; }
+.order-card[data-status="confirmed"] .order-status { background: #e8daef; color: #6c3483; }
+.order-card[data-status="preparing"] .order-status { background: #fdebd0; color: #935116; }
+.order-card[data-status="ready"]     .order-status { background: #d5f5e3; color: #1e8449; }
+.order-card[data-status="delivered"] .order-status { background: var(--bg); color: var(--text-3); }
+.order-card[data-status="cancelled"] .order-status { background: #fadbd8; color: #922b21; }
+
+.order-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 0;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.order-total {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.order-actions { margin-top: 2px; }
+
+.advance-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+}

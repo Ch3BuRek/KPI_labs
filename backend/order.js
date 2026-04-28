@@ -1,4 +1,7 @@
+import { EventEmitter } from './event.js';
+
 const orders = new Map();
+export const orderBus = new EventEmitter('OrderBus');
 
 // ── valid statuses ────────────────────────────────────────────────────────────
 const STATUSES = ['placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
@@ -23,6 +26,8 @@ export function createOrder({ cart, customerName, deliveryAddress }) {
     };
 
     orders.set(order.id, order);
+    orderBus.emit('orderPlaced', order);
+    simulateWork(order.id); 
     console.log(`order: ${order.id} — $${order.total}`);
     
     return order;
@@ -46,5 +51,21 @@ export function updateOrderStatus(id, newStatus) {
     order.updatedAt = new Date().toISOString();
 
     console.log(`order ${id} → ${newStatus}`);
+    orderBus.emit('order_stats_updated', order);
     return order;
+}
+
+
+function simulateWork(orderId) {
+    const flow   = ['confirmed', 'preparing', 'ready', 'delivered'];
+    const delays = [2000, 4000, 6000, 3000];
+    let totalDelay = 0;
+
+    flow.forEach((status, i) => {
+        totalDelay += delays[i];
+        setTimeout(() => {
+            const order = orders.get(orderId);
+            updateOrderStatus(orderId, status);
+        }, totalDelay);
+    });
 }

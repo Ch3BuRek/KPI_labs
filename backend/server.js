@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { menu } from './data.js';
-import { createOrder, getOrder, getAllOrders, updateOrderStatus } from './order.js';
+import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './order.js';
 
 const app = express();
 app.use(express.json());
@@ -35,12 +35,26 @@ app.get('/data/orders', (req, res) => {
     res.json(getAllOrders());
 });
 
-app.get('/data/orders/:id', (req, res) => {
-    const order = getOrder(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json(order);
+app.get('/data/orders/:id/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const current = getOrder(req.params.id);
+    if (current) res.write(`data: ${JSON.stringify(current)}\n\n`);
+
+    const unsub = orderBus.on('orderUpdate', (payload) => {
+        if (payload.data.id !== req.params.id) return;
+        res.write(`data: ${JSON.stringify(payload.data)}\n\n`);
+
+        if (payload.data.status === 'delivered' || payload.data.status === 'cancelled') {
+            orderBus.off('orderUpdate', unsub);
+            res.end();
+        }
+    });
+
+    req.on('close', () => orderBus.off('orderUpdate', unsub));
 });
-
-
 
 app.listen(3000);
