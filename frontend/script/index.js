@@ -130,7 +130,7 @@ $('place-order-btn').addEventListener('click', async () => {
     $('place-order-btn').textContent = 'Placing...';
 
     try {
-        const res   = await fetch('/data/order', {
+        const res   = await fetch('/data/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ cart, deliveryAddress: address }),

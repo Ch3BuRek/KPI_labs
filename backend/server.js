@@ -13,7 +13,7 @@ app.get('/data/menu', (req, res) => {
 });
 
 //----------------------------------------------------------------------
-app.post('/data/order', (req, res) => {
+app.post('/data/orders', (req, res) => {
     try {
         const order = createOrder(req.body);
         res.json(order);
@@ -32,13 +32,13 @@ app.patch('/data/orders/:id/status', (req, res) => {
 });
 
 app.get('/data/orders', (req, res) => {
-  res.json(getAllOrders());
+    res.json(getAllOrders());
 });
 
 app.get('/data/orders/:id', (req, res) => {
-  const order = getOrder(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  res.json(order);
+    const order = getOrder(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
 });
 
 

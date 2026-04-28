@@ -7,12 +7,19 @@ const NEXT_STATUS = {
   ready:'delivered',
 };
 
-const res = await fetch('data/orders');
-const orders = await res.json();
+async function loadOrders() {
+    try {
+        const res    = await fetch('/data/orders');
+        const orders = await res.json();
+        renderOrders(orders);
+    } catch (err) {
+        document.querySelector('.kitchen-grid').innerHTML = '<p>Failed to load orders</p>';
+    }
+}
 
 //----------------------------------------------------------------------
 function renderOrders(orders) {
-    const main = document.querySelector('main');
+    const main = document.querySelector('.kitchen-grid');
     const sorted = [...orders].sort((a, b) =>
         new Date(b.placedAt) - new Date(a.placedAt)
     );
@@ -91,5 +98,5 @@ async function advanceStatus(id, newStatus) {
 }
 
 //----------------------------------------------------------------------
-renderOrders(orders);
+loadOrders();
 setInterval(loadOrders, 10_000);
