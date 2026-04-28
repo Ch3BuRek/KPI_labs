@@ -1,4 +1,4 @@
-class EventEmitter {
+export class EventEmitter {
   #listeners = new Map();
   #name;
 
@@ -6,26 +6,27 @@ class EventEmitter {
     this.#name = name;
   }
 
-  on(event, fn) {
+//----------------------------------------------------------------------
+  on(event, listener) {
     if (!this.#listeners.has(event)) {
       this.#listeners.set(event, new Set());
     }
 
-    this.#listeners.get(event).add(fn);
+    this.#listeners.get(event).add(listener);
 
-    return () => this.off(event, fn);
+    return () => this.off(event, listener);
   }
 
-  once(event, fn) {
+  off(event, listener) {
+    this.#listeners.get(event)?.delete(listener);
+  }
+
+  once(event, listener) {
     const wrapper = (data) => {
-      fn(data);
+      listener(data);
       this.off(event, wrapper);
     };
-    this.on(event, wrapper);
-  }
-
-  off(event, fn) {
-    this.#listeners.get(event)?.delete(fn);
+    return this.on(event, wrapper);
   }
 
   emit(event, data) {
@@ -36,18 +37,28 @@ class EventEmitter {
       timestamp: new Date().toISOString()
     };
 
-    this.#listeners.get(event)?.forEach(fn => fn(payload));
-    this.#listeners.get('*')?.forEach(fn => fn(payload));
+    this.#listeners.get(event)?.forEach(listener => listener(payload));
+    this.#listeners.get('*')?.forEach(listener => listener(payload));
+  }
+
+  clear(event) {
+    if (event) this.#listeners.delete(event);
+    else this.#listeners.clear();
+  }
+
+  listenerCount(event) {
+    return this.#listeners.get(event)?.size ?? 0;
   }
 }
 
-class Observable {
-  #subscribeFn;
+export class Observable {
+  #subscribeliste;
 
-  constructor(subscribeFn) {
-    this.#subscribeFn = subscribeFn;
+  constructor(subscribeliste) {
+    this.#subscribeliste = subscribeliste;
   }
 
+//----------------------------------------------------------------------
   static fromEvent(emitter, event) {
     return new Observable((observer) => {
       const unsub = emitter.on(event, (payload) => observer.next(payload));
@@ -57,11 +68,12 @@ class Observable {
 
   subscribe(onNext, onComplete) {
     const observer = {
-      next: onNext,
+      next:     onNext     || (() => {}),
+      error:    onError    || ((err) => console.error("observable error:", err)),
       complete: onComplete || (() => {}),
     };
 
-    const cleanup = this.#subscribeFn(observer);
+    const cleanup = this.#subscribeliste(observer);
 
     return {
       unsubscribe: () => {
@@ -71,13 +83,25 @@ class Observable {
     };
   }
 
-  map(fn) {
+//----------------------------------------------------------------------
+  map(listener) {
     return new Observable((observer) => {
       const sub = this.subscribe(
-        (value) => observer.next(fn(value)),
+        (value) => observer.next(listener(value)),
         (err)   => observer.error(err),
       );
-      
+
+      return () => sub.unsubscribe();
+    });
+  }
+
+  filter(predicate) {
+    return new Observable((observer) => {
+      const sub = this.subscribe(
+        (value) => { if (predicate(value)) observer.next(value); },
+        (err)   => observer.error(err),
+      );
+
       return () => sub.unsubscribe();
     });
   }
@@ -93,16 +117,15 @@ class Observable {
       return () => sub.unsubscribe();
     });
   }
+
+  static merge(...observables) {
+    return new Observable((observer) => {
+      const subs = observables.map(obs => obs.subscribe(
+        (value) => observer.next(value),
+        (err) => observer.error(err),
+      ));
+
+      return () => subs.forEach(s => s.unsubscribe());
+    });
+  }
 }
-
-const emitter = new EventEmitter();
-
-const obs = Observable
-  .fromEvent(emitter, 'test')
-  .take(2);
-
-obs.subscribe(v => console.log("take:", v.data));
-
-emitter.emit('test', 1);
-emitter.emit('test', 2);
-emitter.emit('test', 3);
