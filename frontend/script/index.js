@@ -10,7 +10,7 @@ async function init() {
     const categories = await categoriesRes.json();
 
     renderCategories(categories);
-    renderMenu('');
+    renderMenu(categories);
 }
 
 init();
@@ -37,43 +37,70 @@ function addToCart(id) {
 }
 
 //----------------------------------------------------------------------
-function renderCategories(categories) {
-    $('cat-tabs').innerHTML =
-    `<button class="cat-tab active" data-cat="">All</button>` +
-    categories.map(c => `<button class="cat-tab" data-cat="${c.id}">${c.name}</button>`).join('');
+const PLACEHOLDER_COLORS = ['#f0c27f', '#a8d8a8', '#a2c4e0', '#f4a9a8', '#b5a9d6', '#f9d59b'];
 
-    $('cat-tabs').querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => { renderMenu(btn.dataset.cat); });
+function renderCategories(categories) {
+    $('cat-tabs').innerHTML = categories.map(c =>
+        `<li><button class="cat-tab" data-cat="${c.id}">${c.name}</button></li>`
+    ).join('');
+
+    $('cat-tabs').querySelectorAll('.cat-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setActiveTab(btn.dataset.cat);
+            const section = document.getElementById(`section-${btn.dataset.cat}`);
+            if (section) section.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
+    const first = $('cat-tabs').querySelector('.cat-tab');
+    if (first) first.classList.add('active');
+}
+
+function setActiveTab(catId) {
+    $('cat-tabs').querySelectorAll('.cat-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cat === catId);
     });
 }
 
 //----------------------------------------------------------------------
-function renderMenu(category, menu) {
-    const items = category
-    ? menuData.filter(i => i.category === category)
-    : menuData;
+function renderMenu(categories) {
+    $('menu-grid').innerHTML = categories.map((cat, catIdx) => {
+        const items = menuData.filter(i => i.category === cat.id);
+        if (!items.length) return '';
 
-    $('menu-grid').innerHTML = items.map(item => `
-        <div class="menu-card">
-        <div class="menu-card-name">${item.name}</div>
-        <div class="menu-card-desc">${item.description}</div>
-        <div class="menu-card-foot">
-            <span class="menu-card-price">$${item.price.toFixed(2)}</span>
-            <button class="add-btn" data-id="${item.id}">+</button>
-        </div>
-        </div>
-    `).join('');
+        const color = PLACEHOLDER_COLORS[catIdx % PLACEHOLDER_COLORS.length];
+
+        const cards = items.map(item => `
+            <div class="menu-card">
+                <div class="menu-card-img" style="--img-color: ${color}"></div>
+                <div class="menu-card-body">
+                    <div class="menu-card-name">${item.name}</div>
+                    <div class="menu-card-desc">${item.description}</div>
+                    <div class="menu-card-price">$${item.price.toFixed(2)}</div>
+                </div>
+                <button class="add-btn" data-id="${item.id}">+</button>
+            </div>
+        `).join('');
+
+        return `
+            <div class="menu-category" id="section-${cat.id}">
+                <h2 class="menu-category-title">${cat.name}</h2>
+                ${cards}
+            </div>
+        `;
+    }).join('');
 
     $('menu-grid').querySelectorAll('.add-btn').forEach(btn => {
         btn.addEventListener('click', () => addToCart(btn.dataset.id));
     });
 }
 
+
 function renderCart() {
     $('cart-count').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     if (cart.length === 0) {
-        $('cart-items').innerHTML = "<p>Cart is empty</p>";
+        $('cart-items').innerHTML = "<p>Кошик порожній</p>";
         $('cart-totals').classList.add('hidden');
         $('place-order-btn').disabled = true;
         return;
@@ -117,9 +144,9 @@ function fetchTotals() {
 
     $('cart-totals').classList.remove('hidden');
     $('cart-totals').innerHTML = `
-        <div class="total-row"><span>Subtotal</span><span>$${t.subtotal.toFixed(2)}</span></div>
-        <div class="total-row"><span>Service fee (5%)</span><span>$${t.serviceFee.toFixed(2)}</span></div>
-        <div class="total-row grand"><span>Total</span><span>$${t.total.toFixed(2)}</span></div>
+        <div class="total-row"><span>Сума</span><span>$${t.subtotal.toFixed(2)}</span></div>
+        <div class="total-row"><span>Сервісний збір (5%)</span><span>$${t.serviceFee.toFixed(2)}</span></div>
+        <div class="total-row grand"><span>Всього</span><span>$${t.total.toFixed(2)}</span></div>
     `;
 }
 
@@ -128,7 +155,7 @@ $('place-order-btn').addEventListener('click', async () => {
     const address = $('address-input').value.trim();
 
     $('place-order-btn').disabled = true;
-    $('place-order-btn').textContent = 'Placing...';
+    $('place-order-btn').textContent = 'Обробляємо ваше замовлення...';
 
     try {
         const res   = await fetch('/data/orders', {
@@ -147,7 +174,7 @@ $('place-order-btn').addEventListener('click', async () => {
     } catch (err) {
         alert('Fail');
     } finally {
-        $('place-order-btn').textContent = 'Place Order';
+        $('place-order-btn').textContent = 'Замовити';
     }
 });
 
@@ -155,9 +182,9 @@ function showConfirmation(order) {
     const panel = $('cart-panel');
     panel.innerHTML = `
         <div class="confirmation">
-            <h3>Order placed!</h3>
-            <p class="order-id">Order ID: <strong>${order.id}</strong></p>
-            <p>Delivering to: ${order.deliveryAddress}</p>
+            <h3>Замовлення прийнято!</h3>
+            <p class="order-id">Номер замовлення: <strong>${order.id}</strong></p>
+            <p>Доставка: ${order.deliveryAddress}</p>
             <div class="order-summary">
                 ${order.cart.map(i => `
                     <div class="conf-item">
@@ -166,8 +193,8 @@ function showConfirmation(order) {
                     </div>
                 `).join('')}
             </div>
-            <div class="conf-total">Total: $${order.total.toFixed(2)}</div>
-            <button id="new-order-btn" class="btn-primary">New Order</button>
+            <div class="conf-total">Сума: $${order.total.toFixed(2)}</div>
+            <button id="new-order-btn" class="btn-primary">Замовити ще раз</button>
         </div>
     `;
 
@@ -179,3 +206,5 @@ function showConfirmation(order) {
 $('address-input').addEventListener('input', () => {
     $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
 });
+
+init();
