@@ -15,25 +15,36 @@
     </button>
 </header>
 
-<main class="page"> 
-    <section class="section">
-        <div class="section-header">
-            <h2>Menu</h2>
-            <div class="cat-tabs" id="cat-tabs"></div>
+<div class="restaurant-hero">
+    <div class="restaurant-info">
+        <h1 class="restaurant-name">Заклад</h1>
+        <div class="restaurant-meta">
+            <span class="meta-badge">96%</span>
+            <span>10-25 хв</span>
+            <span>Безкоштовна доставка</span>
         </div>
-        <div class="menu-grid" id="menu-grid">menu here</div>
+    </div>
+</div>
+
+<main class="page"> 
+    <nav class="cat-sidebar" id="cat-sidebar">
+        <ul class="cat-list" id="cat-tabs"></ul>
+    </nav>
+
+    <section class="menu-section" id="menu-section">
+        <div id="menu-grid" class="menu-list"></div>
     </section>
 
     <aside class="cart-panel" id="cart-panel">
-        <h3>Your order</h3>
+        <h3 class="cart-title">Ваше замовлення</h3>
 
         <div class="field-group">
-            <label for="address-input">Delivery address</label>
+            <label for="address-input">Адреса доставки</label>
             <input id="address-input" type="text" placeholder="123 Lukianivka St" value="123 Lukianivka St"/>
         </div>
 
         <div id="cart-items" class="cart-items">
-            <p class="empty">No items added yet...</p>
+            <p class="empty">Поки що порожньо</p>
         </div>
 
         <div id="cart-totals" class="cart-totals hidden"></div>

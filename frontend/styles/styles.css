@@ -71,25 +71,56 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
 .cart-btn:hover { background: #333; }
 
 /*-----------------------------------------------------------------------*/
-.page {
+.restaurant-hero {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--red) 100%);
+  padding: 24px 24px 20px;
+  color: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.restaurant-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.restaurant-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+.meta-badge {
+  background: #27ae60;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/*-----------------------------------------------------------------------*/
+.customer-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  height: calc(100vh - 48px);
+  grid-template-columns: 180px 1fr 320px;
+  height: calc(100vh - 48px - 80px); /* header + hero */
   overflow: hidden;
 }
 
-.section {
+/*-----------------------------------------------------------------------*/
+.cat-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
-  padding: 16px;
+  padding: 8px 0;
 }
 
-.section-header {
+.cat-list {
+  list-style: none;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -103,10 +134,10 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
 .cat-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
 /*-----------------------------------------------------------------------*/
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .menu-card {
@@ -125,10 +156,15 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   background: var(--brand);
   color: #fff;
   border: none;
-  width: 28px; height: 28px;
-  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
   line-height: 1;
-  border-radius: 3px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .add-btn:hover { background: #a93226; }
 
@@ -143,6 +179,8 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   overflow-y: auto;
 }
 
+.cart-title { font-size: 16px; font-weight: 700; }
+
 .field-group { display: flex; flex-direction: column; gap: 4px; }
 .field-group label { font-size: 12px; color: var(--text-2); font-weight: 600; }
 .field-group input { width: 100%; }
@@ -153,7 +191,6 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 320px;
   min-height: 40px;
 }
 
@@ -275,7 +312,6 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   gap: 6px;
 }
 
-/* color the left border by status */
 .order-card[data-status="placed"]    { border-left-color: #2980b9; }
 .order-card[data-status="confirmed"] { border-left-color: #8e44ad; }
 .order-card[data-status="preparing"] { border-left-color: #e67e22; }
@@ -306,7 +342,6 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   color: var(--text-3);
 }
 
-/* status badge colors */
 .order-card[data-status="placed"]    .order-status { background: #d6eaf8; color: #1a5276; }
 .order-card[data-status="confirmed"] .order-status { background: #e8daef; color: #6c3483; }
 .order-card[data-status="preparing"] .order-status { background: #fdebd0; color: #935116; }
