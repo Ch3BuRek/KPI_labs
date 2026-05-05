@@ -12,10 +12,13 @@ async function loadOrders() {
         const res    = await fetch('/data/orders');
         const orders = await res.json();
         renderOrders(orders);
+        updateMap(orders);
     } catch (err) {
         document.querySelector('.kitchen-grid').innerHTML = '<p>Failed to load orders</p>';
     }
 }
+
+
 
 //----------------------------------------------------------------------
 function renderOrders(orders) {
@@ -30,9 +33,9 @@ function renderOrders(orders) {
          </div>
     `;
 
-  main.querySelectorAll('.advance-btn').forEach(btn => {
+    main.querySelectorAll('.advance-btn').forEach(btn => {
         btn.addEventListener('click', () => advanceStatus(btn.dataset.id, btn.dataset.next));
-  });
+    });
 
 }
 
@@ -97,6 +100,62 @@ async function advanceStatus(id, newStatus) {
     }
 }
 
+const customerMarkers = new Map();
+
+function updateMap(orders) {
+    const activeOrders = orders.filter(o =>
+        !['delivered', 'cancelled'].includes(o.status)
+    );
+
+    for (const [id, marker] of customerMarkers) {
+        if (!activeOrders.find(o => o.id === id)) {
+            map.removeLayer(marker);
+            customerMarkers.delete(id);
+        }
+    }
+
+    for (const order of activeOrders) {
+        if (!order.coords) continue;
+
+        if (!customerMarkers.has(order.id)) {
+            const marker = L.marker([order.coords.lat, order.coords.lng])
+                .addTo(map)
+                .bindPopup(`
+                    <strong>${order.customerName}</strong><br>
+                    ${order.deliveryAddress}<br>
+                    $${order.total} — ${order.status}
+                `);
+            customerMarkers.set(order.id, marker);
+        } else {
+            const marker = customerMarkers.get(order.id);
+            marker.getPopup().setContent(`
+                <strong>${order.customerName}</strong><br>
+                ${order.deliveryAddress}<br>
+                $${order.total} — ${order.status}
+            `);
+        }
+    }
+}
+
 //----------------------------------------------------------------------
 loadOrders();
 setInterval(loadOrders, 1_000);
+
+//----------------------------------------------------------------------
+const RESTAURANT = { lat: 50.4501, lng: 30.5234 };
+let map;
+
+function initMap() {
+    map = L.map('map').setView([RESTAURANT.lat, RESTAURANT.lng], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    L.marker([RESTAURANT.lat, RESTAURANT.lng])
+        .addTo(map)
+        .bindPopup('<strong>Our restaurant</strong>')
+        .openPopup();
+}
+
+initMap();

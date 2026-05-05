@@ -3,6 +3,17 @@ import { EventEmitter } from './feautures/event.js';
 const orders = new Map();
 export const orderBus = new EventEmitter('OrderBus');
 
+const RESTAURANT = { lat: 50.4501, lng: 30.5234 };
+
+function randomNearby(center, radiusKm = 3) {
+    const latOffset = (Math.random() - 0.5) * 2 * (radiusKm / 111);
+    const lngOffset = (Math.random() - 0.5) * 2 * (radiusKm / (111 * Math.cos(center.lat * Math.PI / 180)));
+    return {
+        lat: +(center.lat + latOffset).toFixed(6),
+        lng: +(center.lng + lngOffset).toFixed(6),
+    };
+}
+
 // ── valid statuses ────────────────────────────────────────────────────────────
 const STATUSES = ['placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
 
@@ -17,6 +28,7 @@ export function createOrder({ cart, customerName, deliveryAddress }) {
         cart,
         customerName,
         deliveryAddress,
+        coords: randomNearby(RESTAURANT), 
         status: "placed",
         subtotal: +subtotal.toFixed(2),
         serviceFee: +serviceFee.toFixed(2),

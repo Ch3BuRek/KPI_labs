@@ -436,3 +436,9 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   font-size: 12px;
   padding: 6px 12px;
 }
+
+/*-----------------------------------------------------------------------*/
+#map {
+  flex: 1;
+  min-height: 0;
+}
