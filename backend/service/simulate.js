@@ -48,16 +48,13 @@ function placeRandomOrder() {
 
 export function startSimulation() {
     placeRandomOrder();
-    
-    const delay = 8000 + Math.random() * 7000; 
 
     function scheduleNext() {
-        const speedUp = delay - 1000; 
-        
+        const delay = 20000 + Math.random() * 15000;
         setTimeout(() => {
             placeRandomOrder();
-            scheduleNext(); 
-        }, speedUp);
+            scheduleNext();
+        }, delay);
     }
 
     scheduleNext();

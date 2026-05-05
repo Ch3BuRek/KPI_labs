@@ -7,6 +7,13 @@ const NEXT_STATUS = {
   ready:'delivered',
 };
 
+const ROUTE_LINE_STYLE = {
+    color: 'orange',
+    weight: 2,
+    dashArray: '6 6',
+    opacity: 0.7,
+};
+
 async function loadOrders() {
     try {
         const res    = await fetch('/data/orders');
@@ -109,11 +116,13 @@ function updateMap(orders) {
         !['delivered', 'cancelled'].includes(o.status)
     );
 
-    for (const [id, marker] of customerMarkers) {
-        if (!activeOrders.find(o => o.id === id)) {
-            map.removeLayer(marker);
-            customerMarkers.delete(id);
-        }
+    const toRemove = [];
+    for (const [id] of customerMarkers) {
+        if (!activeOrders.find(o => o.id === id)) toRemove.push(id);
+    }
+    for (const id of toRemove) {
+        map.removeLayer(customerMarkers.get(id));
+        customerMarkers.delete(id);
     }
 
     for (const order of activeOrders) {
@@ -172,7 +181,9 @@ async function updateCouriers() {
         if (!courierMarkers.has(courier.id)) {
             const icon = L.divIcon({
                 className: '',
-                html: `<div>${courier.name[0]}</div>`,
+                html: `<div class="courier-icon">${courier.name[0]}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
             });
 
             const marker = L.marker([courier.lat, courier.lng], { icon })
@@ -194,16 +205,11 @@ async function updateCouriers() {
         if (target) {
             const points = [
                 [courier.lat, courier.lng],
-                [target.lat, target.lng],
+                [target.lat,  target.lng],
             ];
 
             if (!courierLines.has(courier.id)) {
-                const line = L.polyline(points, {
-                    color: 'orange',
-                    weight: 2,
-                    dashArray: '6 6',
-                    opacity: 0.7,
-                }).addTo(map);
+                const line = L.polyline(points, ROUTE_LINE_STYLE).addTo(map);
                 courierLines.set(courier.id, line);
             } else {
                 courierLines.get(courier.id).setLatLngs(points);

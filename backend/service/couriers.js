@@ -48,7 +48,7 @@ setInterval(() => {
         } else if (courier.status === 'heading_to_customer') {
             const arrived = stepToward(courier, courier.order.coords);
             if (arrived) {
-                updateOrderStatus(courier.orderId, 'доставив');
+                updateOrderStatus(courier.orderId, 'delivered');
                 courier.status = 'idle';
                 courier.orderId = null;
                 courier.order = null;

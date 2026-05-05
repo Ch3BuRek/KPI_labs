@@ -56,24 +56,25 @@ export function updateOrderStatus(id, newStatus) {
         throw new Error(`Order ${id} not found`);
     }
 
-    order.status    = newStatus;
+    order.status = newStatus;
     order.updatedAt = new Date().toISOString();
 
     console.log(`order ${id} → ${newStatus}`);
-    orderBus.emit('order_stats_updated', order);
+    orderBus.emit('orderUpdate', order);
     return order;
 }
 
 
 function simulateWork(orderId) {
-    const flow   = ['confirmed', 'preparing', 'ready', 'delivered'];
-    const delays = [2000, 4000, 6000, 3000];
+    const flow = ['confirmed', 'preparing', 'ready'];
+    const delays = [5000, 10000, 8000];
     let totalDelay = 0;
 
     flow.forEach((status, i) => {
         totalDelay += delays[i];
         setTimeout(() => {
             const order = orders.get(orderId);
+            if (!order || order.status === 'cancelled') return;
             updateOrderStatus(orderId, status);
         }, totalDelay);
     });
