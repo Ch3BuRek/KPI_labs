@@ -1,9 +1,8 @@
-import { EventEmitter } from './feautures/event.js';
+import { EventEmitter } from '../feautures/event.js';
+import { RESTAURANT } from '../data.js';
 
 const orders = new Map();
 export const orderBus = new EventEmitter('OrderBus');
-
-const RESTAURANT = { lat: 50.4501, lng: 30.5234 };
 
 function randomNearby(center, radiusKm = 3) {
     const latOffset = (Math.random() - 0.5) * 2 * (radiusKm / 111);
@@ -14,9 +13,7 @@ function randomNearby(center, radiusKm = 3) {
     };
 }
 
-// ── valid statuses ────────────────────────────────────────────────────────────
 const STATUSES = ['placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
-
 
 export function createOrder({ cart, customerName, deliveryAddress }) {
     const subtotal   = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { menu, categories } from './data.js';
-import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './order.js';
-import { startSimulation } from './simulate.js';
+import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './service/order.js';
+import { startSimulation } from './service/simulate.js';
+import { getCouriers } from './service/couriers.js';
 
 const app = express();
 app.use(express.json());
@@ -32,12 +33,17 @@ app.patch('/data/orders/:id/status', (req, res) => {
     }
 });
 
+//----------------------------------------------------------------------
 app.get('/data/orders', (req, res) => {
     res.json(getAllOrders());
 });
 
 app.get('/data/categories', (req, res) => {
     res.json(categories);
+});
+
+app.get('/data/couriers', (req, res) => {
+    res.json(getCouriers());
 });
 
 app.get('/data/orders/:id/stream', (req, res) => {

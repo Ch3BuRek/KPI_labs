@@ -1,5 +1,5 @@
 import { createOrder } from './order.js';
-import { menu } from './data.js';
+import { menu } from '../data.js';
 
 const NAMES = [
     'Олег', 'Марія', 'Іван', 'Софія', 'Данило',

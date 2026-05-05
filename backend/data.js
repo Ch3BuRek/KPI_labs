@@ -1,3 +1,5 @@
+export const RESTAURANT = { lat: 50.4501, lng: 30.5234 };
+
 export const categories = [
   { id: 'burgers', name: 'Бургери та сандвічі' },
   { id: 'chicken', name: 'Курка та риба' },

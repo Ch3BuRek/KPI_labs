@@ -101,6 +101,7 @@ async function advanceStatus(id, newStatus) {
 }
 
 const customerMarkers = new Map();
+const courierMarkers  = new Map();
 
 function updateMap(orders) {
     const activeOrders = orders.filter(o =>
@@ -137,11 +138,6 @@ function updateMap(orders) {
     }
 }
 
-//----------------------------------------------------------------------
-loadOrders();
-setInterval(loadOrders, 1_000);
-
-//----------------------------------------------------------------------
 const RESTAURANT = { lat: 50.4501, lng: 30.5234 };
 let map;
 
@@ -159,3 +155,37 @@ function initMap() {
 }
 
 initMap();
+
+//----------------------------------------------------------------------
+loadOrders();
+setInterval(loadOrders, 1_000);
+
+setInterval(updateCouriers, 1000);
+updateCouriers();
+
+async function updateCouriers() {
+    const res = await fetch('/data/couriers');
+    const couriers = await res.json();
+
+    for (const courier of couriers) {
+        if (!courierMarkers.has(courier.id)) {
+            const icon = L.divIcon({
+                className: '',
+                html: `<div>${courier.name[0]}</div>`,
+            });
+
+            const marker = L.marker([courier.lat, courier.lng], { icon })
+                .addTo(map)
+                .bindPopup(`<strong>${courier.name}</strong><br>${courier.status}`);
+
+            courierMarkers.set(courier.id, marker);
+        } else {
+            const marker = courierMarkers.get(courier.id);
+            marker.setLatLng([courier.lat, courier.lng]);
+            marker.getPopup().setContent(
+                `<strong>${courier.name}</strong><br>${courier.status}` +
+                (courier.orderId ? `<br>Order: ${courier.orderId}` : '')
+            );
+        }
+    }
+}
