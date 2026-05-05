@@ -1,5 +1,5 @@
-import { RESTAURANT } from './data.js';
-import { orderBus }   from './order.js';
+import { RESTAURANT } from '../data.js';
+import { orderBus, updateOrderStatus } from './order.js';
 
 const couriers = [
     { id: 'c1', name: 'Мухамед',   lat: 50.452, lng: 30.515, status: 'idle', orderId: null },
@@ -13,21 +13,22 @@ function stepToward(courier, target, speed = 0.0003) {
     const dlat = target.lat - courier.lat;
     const dlng = target.lng - courier.lng;
     const dist  = Math.sqrt(dlat * dlat + dlng * dlng);
-    
     if (dist < speed) {
         courier.lat = target.lat;
         courier.lng = target.lng;
         return true;
     }
-    courier.lat -= (dlat / dist) * speed; 
-    courier.lng -= (dlng / dist) * speed;
+    courier.lat += (dlat / dist) * speed;
+    courier.lng += (dlng / dist) * speed;
     return false;
 }
 
 orderBus.on('orderUpdate', (payload) => {
     const order = payload.data;
     if (order.status !== 'ready') return;
-    const courier = couriers[0]; 
+
+    const courier = couriers.find(c => c.status === 'idle');
+    if (!courier) return;
 
     courier.status = 'heading_to_restaurant';
     courier.orderId = order.id;
@@ -45,13 +46,13 @@ setInterval(() => {
                 console.log(`курєр ${courier.name} везе ${courier.orderId}`);
             }
         } else if (courier.status === 'heading_to_customer') {
-            const arrived = stepToward(courier, { lat: courier.lat, lng: courier.lng });
-            
+            const arrived = stepToward(courier, courier.order.coords);
             if (arrived) {
+                updateOrderStatus(courier.orderId, 'доставив');
                 courier.status = 'idle';
                 courier.orderId = null;
                 courier.order = null;
-                console.log(`курєр ${courier.name} error?`);
+                console.log(`курєр ${courier.name} в очікувані`);
             }
         }
     }

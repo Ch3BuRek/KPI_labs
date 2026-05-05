@@ -102,6 +102,7 @@ async function advanceStatus(id, newStatus) {
 
 const customerMarkers = new Map();
 const courierMarkers  = new Map();
+const courierLines    = new Map();
 
 function updateMap(orders) {
     const activeOrders = orders.filter(o =>
@@ -187,5 +188,37 @@ async function updateCouriers() {
                 (courier.orderId ? `<br>Order: ${courier.orderId}` : '')
             );
         }
+
+        const target = getCourierTarget(courier);
+
+        if (target) {
+            const points = [
+                [courier.lat, courier.lng],
+                [target.lat, target.lng],
+            ];
+
+            if (!courierLines.has(courier.id)) {
+                const line = L.polyline(points, {
+                    color: 'orange',
+                    weight: 2,
+                    dashArray: '6 6',
+                    opacity: 0.7,
+                }).addTo(map);
+                courierLines.set(courier.id, line);
+            } else {
+                courierLines.get(courier.id).setLatLngs(points);
+            }
+        } else {
+            if (courierLines.has(courier.id)) {
+                map.removeLayer(courierLines.get(courier.id));
+                courierLines.delete(courier.id);
+            }
+        }
     }
+}
+
+function getCourierTarget(courier) {
+    if (courier.status === 'heading_to_restaurant') return RESTAURANT;
+    if (courier.status === 'heading_to_customer') return courier.order?.coords ?? null;
+    return null;
 }
