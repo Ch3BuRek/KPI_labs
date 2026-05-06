@@ -1,17 +1,9 @@
 import { createOrder } from './order.js';
-import { menu } from '../data.js';
+import { menu, DELIVERY_LOCATIONS } from '../data.js';
 
 const NAMES = [
     'Олег', 'Марія', 'Іван', 'Софія', 'Данило',
     'Олена', 'Микола', 'Юлія', 'Андрій', 'Наталія',
-];
-
-const ADDRESSES = [
-    'вулиця Хрещатик, 12',
-    'проспект Шевченка, 45',
-    'бульвар Лесі Українки, 8',
-    'вулиця Городського, 23',
-    'вулиця Антоновича, 77',
 ];
 
 function randomItem(arr) {
@@ -36,14 +28,15 @@ function randomCart() {
     return cart;
 }
 
-const sharedOrder = { cart: [], customerName: '', deliveryAddress: '' };
-
 function placeRandomOrder() {
-    sharedOrder.cart = randomCart();
-    sharedOrder.customerName = randomItem(NAMES);
-    sharedOrder.deliveryAddress = randomItem(ADDRESSES);
-    
-    createOrder(sharedOrder);
+    const location = randomItem(DELIVERY_LOCATIONS);
+
+    createOrder({
+        cart:            randomCart(),
+        customerName:    randomItem(NAMES),
+        deliveryAddress: location.address,
+        coords:          { lat: location.lat, lng: location.lng },
+    });
 }
 
 export function startSimulation() {

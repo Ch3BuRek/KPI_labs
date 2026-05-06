@@ -15,7 +15,7 @@ function randomNearby(center, radiusKm = 3) {
 
 const STATUSES = ['placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
 
-export function createOrder({ cart, customerName, deliveryAddress }) {
+export function createOrder({ cart, customerName, deliveryAddress, coords }) {
     const subtotal   = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const serviceFee = subtotal * 0.05;
     const total      = subtotal + serviceFee;
@@ -25,7 +25,7 @@ export function createOrder({ cart, customerName, deliveryAddress }) {
         cart,
         customerName,
         deliveryAddress,
-        coords: randomNearby(RESTAURANT), 
+        coords: coords ?? randomNearby(RESTAURANT),
         status: "placed",
         subtotal: +subtotal.toFixed(2),
         serviceFee: +serviceFee.toFixed(2),

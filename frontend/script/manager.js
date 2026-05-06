@@ -8,8 +8,8 @@ const NEXT_STATUS = {
 };
 
 const ROUTE_LINE_STYLE = {
-    color: 'orange',
-    weight: 2,
+    color: '#1a5275',
+    weight: 3,
     dashArray: '6 6',
     opacity: 0.7,
 };
@@ -129,7 +129,15 @@ function updateMap(orders) {
         if (!order.coords) continue;
 
         if (!customerMarkers.has(order.id)) {
-            const marker = L.marker([order.coords.lat, order.coords.lng])
+            const icon = L.divIcon({
+                className: '',
+                html: `<div class="pin-customer">
+                            <img src="icons/pin.svg" alt="customer pin"/>
+                        </div>`,
+                iconSize:   [36, 36],
+                iconAnchor: [18, 36], 
+            });
+            const marker = L.marker([order.coords.lat, order.coords.lng], { icon, zIndexOffset: 1000 })
                 .addTo(map)
                 .bindPopup(`
                     <strong>${order.customerName}</strong><br>
@@ -154,13 +162,24 @@ let map;
 function initMap() {
     map = L.map('map').setView([RESTAURANT.lat, RESTAURANT.lng], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CARTO',
+        subdomains: 'abcd',
+        maxZoom: 16,
     }).addTo(map);
 
-    L.marker([RESTAURANT.lat, RESTAURANT.lng])
+    const restaurantIcon = L.divIcon({
+        className: '',
+        html: `<div class="map-pin pin-restaurant">
+                   <img src="icons/convenience-store.svg" alt="restaurant"/>
+               </div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+    });
+
+    L.marker([RESTAURANT.lat, RESTAURANT.lng], { icon: restaurantIcon })
         .addTo(map)
-        .bindPopup('<strong>Our restaurant</strong>')
+        .bindPopup('<strong>Наш ресторан</strong>')
         .openPopup();
 }
 
@@ -181,9 +200,11 @@ async function updateCouriers() {
         if (!courierMarkers.has(courier.id)) {
             const icon = L.divIcon({
                 className: '',
-                html: `<div class="courier-icon">${courier.name[0]}</div>`,
-                iconSize: [28, 28],
-                iconAnchor: [14, 14],
+                html: `<div class="map-pin pin-drone">
+                           <img src="icons/fly.svg" alt="drone"/>
+                       </div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 18],
             });
 
             const marker = L.marker([courier.lat, courier.lng], { icon })

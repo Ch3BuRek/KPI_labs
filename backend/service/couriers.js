@@ -2,9 +2,9 @@ import { RESTAURANT } from '../data.js';
 import { orderBus, updateOrderStatus } from './order.js';
 
 const couriers = [
-    { id: 'c1', name: 'Мухамед',   lat: 50.452, lng: 30.515, status: 'idle', orderId: null },
-    { id: 'c2', name: 'Абдилбек',  lat: 50.448, lng: 30.530, status: 'idle', orderId: null },
-    { id: 'c3', name: 'Котакбас', lat: 50.455, lng: 30.525, status: 'idle', orderId: null },
+    { id: 'c1', name: 'Bot-1', lat: 50.452, lng: 30.515, status: 'idle', orderId: null },
+    { id: 'c2', name: 'Bot-2', lat: 50.448, lng: 30.530, status: 'idle', orderId: null },
+    { id: 'c3', name: 'Bot-3', lat: 50.455, lng: 30.525, status: 'idle', orderId: null },
 ];
 
 export function getCouriers() { return couriers; }

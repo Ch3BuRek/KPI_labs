@@ -1,15 +1,39 @@
-* , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #f5f5f5;
-  --surface:  #ffffff;
-  --border:   #d0d0d0;
-  --text:     #1a1a1a;
-  --text-2:   #555555;
-  --text-3:   #888888;
-  --brand:    #c0392b;
-  --red:      #e74c3c;
+  /*базові кольори*/
+  --bg:          #f5f5f5;
+  --surface:     #ffffff;
+  --border:      #d0d0d0;
+  --text:        #1a1a1a;
+  --text-2:      #555555;
+  --text-3:      #888888;
+
+  /*брендові кольори*/
+  --brand:       #c0392b;
+  --brand-dark:  #922b21;
+  --brand-pale:  #fadbd8;
+
+  /*замовлення*/
+  --blue:        #2980b9;
+  --blue-dark:   #1a5275;
+  --blue-pale:   #d6eaf8;
+
+  --purple:      #8e44ad;
+  --purple-dark: #6c3483;
+  --purple-pale: #e8daef;
+
+  --orange:      #e67e22;
+  --orange-dark: #935116;
+  --orange-pale: #fdebd0;
+
+  --green:       #27ae60;
+  --green-dark:  #1e8449;
+  --green-pale:  #d5f5e3;
+
+  /*карта*/
+  --navy:        #2c3e50;
+  --navy-pale:   #eaf0fb;
 }
 
 html, body {
@@ -20,13 +44,13 @@ html, body {
   height: 100%;
 }
 
-.hidden {display: none !important;}
+.hidden { display: none !important; }
 
 /*-----------------------------------------------------------------------*/
 h2 { font-size: 15px; font-weight: 600; }
 h3 { font-size: 14px; font-weight: 600; }
 
-/*----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
 input[type="text"], select {
   border: 1px solid var(--border);
   background: var(--surface);
@@ -48,7 +72,7 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   font-weight: 600;
   width: 100%;
 }
-.btn-primary:hover    { background: #a93226; }
+.btn-primary:hover    { background: var(--brand-dark); }
 .btn-primary:disabled { background: var(--border); color: var(--text-3); cursor: not-allowed; }
 
 /*-----------------------------------------------------------------------*/
@@ -68,11 +92,11 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   border: none;
   padding: 6px 12px;
 }
-.cart-btn:hover { background: #333; }
+.cart-btn:hover { background: var(--navy); }
 
 /*-----------------------------------------------------------------------*/
 .restaurant-hero {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--red) 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   padding: 24px 24px 20px;
   color: #fff;
   border-bottom: 1px solid var(--border);
@@ -93,7 +117,7 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
 }
 
 .meta-badge {
-  background: #27ae60;
+  background: var(--green);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -143,7 +167,7 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   border-left-color: var(--brand);
   color: var(--brand);
   font-weight: 700;
-  background: #fdf0ee;
+  background: var(--brand-pale);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -186,17 +210,14 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   height: 72px;
   border-radius: 6px;
   flex-shrink: 0;
-  background: var(--img-color, #ddd);
+  background: var(--img-color, var(--border));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
 }
 
-.menu-card-body {
-  flex: 1;
-  min-width: 0;
-}
+.menu-card-body { flex: 1; min-width: 0; }
 
 .menu-card-name  { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
 .menu-card-desc  { font-size: 12px; color: var(--text-2); line-height: 1.4; margin-bottom: 6px;
@@ -217,7 +238,7 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   align-items: center;
   justify-content: center;
 }
-.add-btn:hover { background: #a93226; }
+.add-btn:hover { background: var(--brand-dark); }
 
 /*-----------------------------------------------------------------------*/
 .cart-panel {
@@ -257,8 +278,8 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
 
 .cart-item-name  { flex: 1; font-size: 13px; }
 .cart-item-qty   { display: flex; align-items: center; gap: 4px; }
-.qty-btn  { background: var(--surface); border: 1px solid var(--border); width: 22px; height: 22px; font-size: 14px; border-radius: 3px; }
-.qty-btn:hover { background: var(--bg); }
+.qty-btn         { background: var(--surface); border: 1px solid var(--border); width: 22px; height: 22px; font-size: 14px; border-radius: 3px; }
+.qty-btn:hover   { background: var(--bg); }
 .cart-item-count { min-width: 20px; text-align: center; font-weight: 600; }
 .cart-item-price { font-size: 12px; color: var(--text-2); white-space: nowrap; }
 
@@ -274,9 +295,8 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
 
 .page.manager-page {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  overflow: hidden;
   grid-template-columns: 4fr 6fr 3fr;
+  overflow: hidden;
   height: calc(100vh - 96px);
 }
 
@@ -365,12 +385,12 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   gap: 6px;
 }
 
-.order-card[data-status="placed"]    { border-left-color: #2980b9; }
-.order-card[data-status="confirmed"] { border-left-color: #8e44ad; }
-.order-card[data-status="preparing"] { border-left-color: #e67e22; }
-.order-card[data-status="ready"]     { border-left-color: #27ae60; }
+.order-card[data-status="placed"]    { border-left-color: var(--blue);   }
+.order-card[data-status="confirmed"] { border-left-color: var(--purple); }
+.order-card[data-status="preparing"] { border-left-color: var(--orange); }
+.order-card[data-status="ready"]     { border-left-color: var(--green);  }
 .order-card[data-status="delivered"] { border-left-color: var(--border); opacity: 0.6; }
-.order-card[data-status="cancelled"] { border-left-color: var(--red);    opacity: 0.5; }
+.order-card[data-status="cancelled"] { border-left-color: var(--brand);  opacity: 0.5; }
 
 .order-card-head {
   display: flex;
@@ -395,12 +415,12 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   color: var(--text-3);
 }
 
-.order-card[data-status="placed"]    .order-status { background: #d6eaf8; color: #1a5276; }
-.order-card[data-status="confirmed"] .order-status { background: #e8daef; color: #6c3483; }
-.order-card[data-status="preparing"] .order-status { background: #fdebd0; color: #935116; }
-.order-card[data-status="ready"]     .order-status { background: #d5f5e3; color: #1e8449; }
-.order-card[data-status="delivered"] .order-status { background: var(--bg); color: var(--text-3); }
-.order-card[data-status="cancelled"] .order-status { background: #fadbd8; color: #922b21; }
+.order-card[data-status="placed"]    .order-status { background: var(--blue-pale);   color: var(--blue-dark);   }
+.order-card[data-status="confirmed"] .order-status { background: var(--purple-pale); color: var(--purple-dark); }
+.order-card[data-status="preparing"] .order-status { background: var(--orange-pale); color: var(--orange-dark); }
+.order-card[data-status="ready"]     .order-status { background: var(--green-pale);  color: var(--green-dark);  }
+.order-card[data-status="delivered"] .order-status { background: var(--bg);          color: var(--text-3);      }
+.order-card[data-status="cancelled"] .order-status { background: var(--brand-pale);  color: var(--brand-dark);  }
 
 .order-meta {
   display: flex;
@@ -443,17 +463,56 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   min-height: 0;
 }
 
-.courier-icon {
-  background: orange;
-  color: #fff;
+/*-----------------------------------------------------------------------*/
+.map-pin {
+  width: 36px;
+  height: 36px;
+  background: var(--surface);
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.map-pin img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.map-pin.pin-restaurant {
+  border-color: var(--brand);
+  background: #fff0ee;
+}
+
+.map-pin.pin-restaurant img {
+  filter: invert(17%) sepia(86%) saturate(1200%) hue-rotate(340deg);
+}
+
+.map-pin.pin-drone {
+  border-color: #2c3e50;
+  background: #eaf0fb;
+}
+
+.map-pin.pin-drone img {
+  filter: invert(14%) sepia(20%) saturate(800%) hue-rotate(180deg);
+}
+
+.pin-customer {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3)); 
+}
+
+.pin-customer img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: invert(21%) sepia(85%) saturate(3432%) hue-rotate(346deg) brightness(89%) contrast(91%);
 }
