@@ -2,7 +2,32 @@ import jwt from 'jsonwebtoken';
 
 const SECRET = 'dev-secret';
 
-class JWt {
+class TokenStore {
+    #tokens = new Map();
+
+    set(key, token, expiresInMs) {
+        this.#tokens.set(key, {
+            token,
+            expiresAt: expiresInMs ? Date.now() + expiresInMs : null,
+        });
+    }
+
+    get(key) {
+        const entry = this.#tokens.get(key);
+        if (!entry) return null;
+
+        if (entry.expiresAt && Date.now() >= entry.expiresAt) {
+            this.#tokens.delete(key);
+            return null;
+        }
+
+        return entry.token;
+    }
+
+    clear(key) { this.#tokens.delete(key); }
+}
+
+class JWT {
     #secret;
 
     constructor(secret = 'dev-secret') {
@@ -18,27 +43,44 @@ class JWt {
     }
 }
 
-function authMiddleware(req, res, next) {
-    const header = req.headers['authorization'];
+class AuthProxy {
+    #method;
 
-    if (!header) {
-        return res.status(401).json({ error: 'missing token' });
+    constructor({ method }) {
+        this.#method = method;
     }
 
-    const token = header.replace('Bearer ', '');
+    setmethod(s) { this.#method = s; }
 
-    try {
-        const decoded = method.verify(token);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'invalid token' });
+    middleware() {
+        return (req, res, next) => {
+            const header = req.headers['authorization'];
+            const queryToken = req.query._auth;
+
+            const token = header?.startsWith('Bearer ')
+                ? header.slice(7)
+                : queryToken ?? null;
+
+            if (!token) {
+                return res.status(401).json({ error: 'missing token' });
+            }
+
+            try {
+                req.user = this.#method.verify(token);
+                next();
+            } catch (err) {
+                const msg = err.name === 'TokenExpiredError'
+                    ? 'Token expired'
+                    : 'Invalid token';
+                return res.status(401).json({ error: msg });
+            }
+        };
     }
 }
 
 
 
-const method = new JWt();
+const method = new JWT();
 
 try {
     jwt.verify('some.fake.token', 'wrong-secret');
