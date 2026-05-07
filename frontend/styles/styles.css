@@ -516,3 +516,50 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   object-fit: contain;
   filter: invert(21%) sepia(85%) saturate(3432%) hue-rotate(346deg) brightness(89%) contrast(91%);
 }
+
+/*-----------------------------------------------------------------------*/
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.login-box {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 32px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.login-box h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.login-box input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+}
+
+.login-box input:focus {
+  border-color: var(--brand);
+}
+
+.login-error {
+  color: var(--brand);
+  font-size: 13px;
+  min-height: 16px;
+}

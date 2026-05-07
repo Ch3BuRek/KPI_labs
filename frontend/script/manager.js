@@ -1,5 +1,47 @@
 const $ = id => document.getElementById(id);
 
+//----------------------------------------------------------------------
+function getToken() { return localStorage.getItem('admin_token'); }
+
+function authHeader() {
+    return { Authorization: `Bearer ${getToken()}` };
+}
+
+function showLogin(msg = '') {
+    $('login-overlay').classList.remove('hidden');
+    $('login-error').textContent = msg;
+}
+
+function hideLogin() {
+    $('login-overlay').classList.add('hidden');
+}
+
+$('login-btn').addEventListener('click', async () => {
+    const username = $('login-username').value.trim();
+    const password = $('login-password').value;
+    try {
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+        if (!res.ok) { showLogin('Invalid credentials'); return; }
+
+        const { token } = await res.json();
+        localStorage.setItem('admin_token', token);
+        
+        hideLogin();
+        startApp();
+    } catch {
+        showLogin('Login failed');
+    }
+});
+
+$('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('login-btn').click();
+});
+
+//----------------------------------------------------------------------
 const NEXT_STATUS = {
   placed: 'confirmed',
   confirmed: 'preparing',
@@ -16,7 +58,8 @@ const ROUTE_LINE_STYLE = {
 
 async function loadOrders() {
     try {
-        const res    = await fetch('/data/orders');
+        const res = await fetch('/data/orders', { headers: authHeader() });
+        if (res.status === 401) { showLogin(); return; }
         const orders = await res.json();
         renderOrders(orders);
         updateMap(orders);
@@ -24,8 +67,6 @@ async function loadOrders() {
         document.querySelector('.kitchen-grid').innerHTML = '<p>Failed to load orders</p>';
     }
 }
-
-
 
 //----------------------------------------------------------------------
 function renderOrders(orders) {
@@ -43,7 +84,6 @@ function renderOrders(orders) {
     main.querySelectorAll('.advance-btn').forEach(btn => {
         btn.addEventListener('click', () => advanceStatus(btn.dataset.id, btn.dataset.next));
     });
-
 }
 
 //----------------------------------------------------------------------
@@ -93,12 +133,13 @@ function renderOrderCard(order) {
 //----------------------------------------------------------------------
 async function advanceStatus(id, newStatus) {
     try {
-        const res = await fetch(`data/orders/${id}/status`, {
+        const res = await fetch(`/data/orders/${id}/status`, {
             method:  'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
             body:    JSON.stringify({ status: newStatus }),
         });
 
+        if (res.status === 401) { showLogin(); return; }
         if (!res.ok) throw new Error('Failed to update');
         loadOrders();
 
@@ -135,7 +176,7 @@ function updateMap(orders) {
                             <img src="icons/pin.svg" alt="customer pin"/>
                         </div>`,
                 iconSize:   [36, 36],
-                iconAnchor: [18, 36], 
+                iconAnchor: [18, 36],
             });
             const marker = L.marker([order.coords.lat, order.coords.lng], { icon, zIndexOffset: 1000 })
                 .addTo(map)
@@ -183,17 +224,9 @@ function initMap() {
         .openPopup();
 }
 
-initMap();
-
-//----------------------------------------------------------------------
-loadOrders();
-setInterval(loadOrders, 1_000);
-
-setInterval(updateCouriers, 1000);
-updateCouriers();
-
 async function updateCouriers() {
-    const res = await fetch('/data/couriers');
+    const res = await fetch('/data/couriers', { headers: authHeader() });
+    if (res.status === 401) { showLogin(); return; }
     const couriers = await res.json();
 
     for (const courier of couriers) {
@@ -248,4 +281,19 @@ function getCourierTarget(courier) {
     if (courier.status === 'heading_to_restaurant') return RESTAURANT;
     if (courier.status === 'heading_to_customer') return courier.order?.coords ?? null;
     return null;
+}
+
+//----------------------------------------------------------------------
+function startApp() {
+    initMap();
+    loadOrders();
+    setInterval(loadOrders, 1_000);
+    updateCouriers();
+    setInterval(updateCouriers, 1000);
+}
+
+if (getToken()) {
+    startApp();
+} else {
+    showLogin();
 }
