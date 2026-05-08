@@ -10,6 +10,8 @@ const USERS = {
     admin: { password: 'admin123', role: 'admin' },
 };
 
+const customers = new Map();
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -17,12 +19,25 @@ app.use(express.static('frontend'));
 
 app.post('/auth/login', (req, res) => {
     const { username, password } = req.body ?? {};
-    const user = USERS[username];
+    const user = USERS[username] ?? customers.get(username);
     if (!user || user.password !== password) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
     const token = generateToken({ username, role: user.role });
-    res.json({ token });
+    res.json({ token, role: user.role });
+});
+
+app.post('/auth/register', (req, res) => {
+    const { username, password } = req.body ?? {};
+    if (!username?.trim() || !password) {
+        return res.status(400).json({ error: 'Username and password required' });
+    }
+    if (USERS[username] || customers.has(username)) {
+        return res.status(409).json({ error: 'Username already taken' });
+    }
+    customers.set(username, { password, role: 'customer' });
+    const token = generateToken({ username, role: 'customer' });
+    res.json({ token, role: 'customer' });
 });
 
 app.get('/data/menu', (req, res) => {
@@ -30,9 +45,9 @@ app.get('/data/menu', (req, res) => {
 });
 
 //----------------------------------------------------------------------
-app.post('/data/orders', (req, res) => {
+app.post('/data/orders', authMiddleware, requireRole('customer'), (req, res) => {
     try {
-        const order = createOrder(req.body);
+        const order = createOrder({ ...req.body, customerName: req.user.username });
         res.json(order);
     } catch (err) {
         res.status(400).json({ error: err.message });
