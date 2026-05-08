@@ -1,84 +1,45 @@
+import { initManagerAuth } from './auth.js';
+
 const $ = id => document.getElementById(id);
 
-//----------------------------------------------------------------------
-function getToken() { return localStorage.getItem('admin_token'); }
-
-function authHeader() {
-    return { Authorization: `Bearer ${getToken()}` };
-}
-
-function showLogin(msg = '') {
-    $('login-overlay').classList.remove('hidden');
-    $('login-error').textContent = msg;
-}
-
-function hideLogin() {
-    $('login-overlay').classList.add('hidden');
-}
-
-$('login-btn').addEventListener('click', async () => {
-    const username = $('login-username').value.trim();
-    const password = $('login-password').value;
-    try {
-        const res = await fetch('/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        });
-        if (!res.ok) { showLogin('Invalid credentials'); return; }
-
-        const { token } = await res.json();
-        localStorage.setItem('admin_token', token);
-        
-        hideLogin();
-        startApp();
-    } catch {
-        showLogin('Login failed');
-    }
-});
-
-$('login-password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') $('login-btn').click();
-});
+const auth = initManagerAuth({ onLogin: startApp });
 
 //----------------------------------------------------------------------
 const NEXT_STATUS = {
-  placed: 'confirmed',
-  confirmed: 'preparing',
-  preparing: 'ready',
-  ready:'delivered',
+    placed:    'confirmed',
+    confirmed: 'preparing',
+    preparing: 'ready',
+    ready:     'delivered',
 };
 
 const ROUTE_LINE_STYLE = {
-    color: '#1a5275',
-    weight: 3,
+    color:     '#1a5275',
+    weight:    3,
     dashArray: '6 6',
-    opacity: 0.7,
+    opacity:   0.7,
 };
 
+//----------------------------------------------------------------------
 async function loadOrders() {
     try {
-        const res = await fetch('/data/orders', { headers: authHeader() });
-        if (res.status === 401) { showLogin(); return; }
+        const res = await fetch('/data/orders', { headers: auth.header() });
+        if (res.status === 401) { auth.showLogin(); return; }
         const orders = await res.json();
         renderOrders(orders);
         updateMap(orders);
-    } catch (err) {
+    } catch {
         document.querySelector('.kitchen-grid').innerHTML = '<p>Failed to load orders</p>';
     }
 }
 
-//----------------------------------------------------------------------
 function renderOrders(orders) {
-    const main = document.querySelector('.kitchen-grid');
-    const sorted = [...orders].sort((a, b) =>
-        new Date(b.placedAt) - new Date(a.placedAt)
-    );
+    const main   = document.querySelector('.kitchen-grid');
+    const sorted = [...orders].sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
 
     main.innerHTML = `
         <div class="orders-grid">
-            ${sorted.map(order => renderOrderCard(order)).join('')}
-         </div>
+            ${sorted.map(renderOrderCard).join('')}
+        </div>
     `;
 
     main.querySelectorAll('.advance-btn').forEach(btn => {
@@ -86,24 +47,21 @@ function renderOrders(orders) {
     });
 }
 
-//----------------------------------------------------------------------
 function renderOrderCard(order) {
     const nextStatus = NEXT_STATUS[order.status];
-    const time = new Date(order.placedAt).toLocaleTimeString();
-    const isDone = order.status === 'delivered' || order.status === 'cancelled';
+    const time       = new Date(order.placedAt).toLocaleTimeString();
+    const isDone     = order.status === 'delivered' || order.status === 'cancelled';
 
     return `
         <div class="order-card" data-id="${order.id}" data-status="${order.status}">
             <div class="order-card-head">
                 <span class="order-id">${order.id}</span>
-                <span class="order-status" ">${order.status}</span>
+                <span class="order-status">${order.status}</span>
             </div>
-
             <div class="order-meta">
                 <span>${order.deliveryAddress}</span>
                 <span>at ${time}</span>
             </div>
-
             <div class="order-items">
                 ${order.cart.map(i => `
                     <div class="order-item">
@@ -112,50 +70,41 @@ function renderOrderCard(order) {
                     </div>
                 `).join('')}
             </div>
-
             <div class="order-total">Total: $${order.total.toFixed(2)}</div>
-
-            ${!isDone ? `
+            ${!isDone && nextStatus ? `
                 <div class="order-actions">
-                    ${nextStatus ? `
-                        <button class="advance-btn btn-primary"
-                            data-id="${order.id}"
-                            data-next="${nextStatus}">
-                            -> Mark as ${nextStatus}
-                        </button>
-                    ` : ''}
+                    <button class="advance-btn btn-primary"
+                        data-id="${order.id}" data-next="${nextStatus}">
+                        -> Mark as ${nextStatus}
+                    </button>
                 </div>
             ` : ''}
         </div>
     `;
 }
 
-//----------------------------------------------------------------------
 async function advanceStatus(id, newStatus) {
     try {
         const res = await fetch(`/data/orders/${id}/status`, {
             method:  'PATCH',
-            headers: { 'Content-Type': 'application/json', ...authHeader() },
+            headers: { 'Content-Type': 'application/json', ...auth.header() },
             body:    JSON.stringify({ status: newStatus }),
         });
-
-        if (res.status === 401) { showLogin(); return; }
+        if (res.status === 401) { auth.showLogin(); return; }
         if (!res.ok) throw new Error('Failed to update');
         loadOrders();
-
     } catch (err) {
         alert(`Error: ${err.message}`);
     }
 }
 
+//----------------------------------------------------------------------
 const customerMarkers = new Map();
 const courierMarkers  = new Map();
 const courierLines    = new Map();
 
 function updateMap(orders) {
-    const activeOrders = orders.filter(o =>
-        !['delivered', 'cancelled'].includes(o.status)
-    );
+    const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status));
 
     const toRemove = [];
     for (const [id] of customerMarkers) {
@@ -172,27 +121,17 @@ function updateMap(orders) {
         if (!customerMarkers.has(order.id)) {
             const icon = L.divIcon({
                 className: '',
-                html: `<div class="pin-customer">
-                            <img src="icons/pin.svg" alt="customer pin"/>
-                        </div>`,
-                iconSize:   [36, 36],
-                iconAnchor: [18, 36],
+                html: `<div class="pin-customer"><img src="icons/pin.svg" alt="customer pin"/></div>`,
+                iconSize: [36, 36], iconAnchor: [18, 36],
             });
             const marker = L.marker([order.coords.lat, order.coords.lng], { icon, zIndexOffset: 1000 })
                 .addTo(map)
-                .bindPopup(`
-                    <strong>${order.customerName}</strong><br>
-                    ${order.deliveryAddress}<br>
-                    $${order.total} — ${order.status}
-                `);
+                .bindPopup(`<strong>${order.customerName}</strong><br>${order.deliveryAddress}<br>$${order.total} — ${order.status}`);
             customerMarkers.set(order.id, marker);
         } else {
-            const marker = customerMarkers.get(order.id);
-            marker.getPopup().setContent(`
-                <strong>${order.customerName}</strong><br>
-                ${order.deliveryAddress}<br>
-                $${order.total} — ${order.status}
-            `);
+            customerMarkers.get(order.id).getPopup().setContent(
+                `<strong>${order.customerName}</strong><br>${order.deliveryAddress}<br>$${order.total} — ${order.status}`
+            );
         }
     }
 }
@@ -211,11 +150,8 @@ function initMap() {
 
     const restaurantIcon = L.divIcon({
         className: '',
-        html: `<div class="map-pin pin-restaurant">
-                   <img src="icons/convenience-store.svg" alt="restaurant"/>
-               </div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
+        html: `<div class="map-pin pin-restaurant"><img src="icons/convenience-store.svg" alt="restaurant"/></div>`,
+        iconSize: [36, 36], iconAnchor: [18, 36],
     });
 
     L.marker([RESTAURANT.lat, RESTAURANT.lng], { icon: restaurantIcon })
@@ -225,25 +161,20 @@ function initMap() {
 }
 
 async function updateCouriers() {
-    const res = await fetch('/data/couriers', { headers: authHeader() });
-    if (res.status === 401) { showLogin(); return; }
+    const res = await fetch('/data/couriers', { headers: auth.header() });
+    if (res.status === 401) { auth.showLogin(); return; }
     const couriers = await res.json();
 
     for (const courier of couriers) {
         if (!courierMarkers.has(courier.id)) {
             const icon = L.divIcon({
                 className: '',
-                html: `<div class="map-pin pin-drone">
-                           <img src="icons/fly.svg" alt="drone"/>
-                       </div>`,
-                iconSize: [36, 36],
-                iconAnchor: [18, 18],
+                html: `<div class="map-pin pin-drone"><img src="icons/fly.svg" alt="drone"/></div>`,
+                iconSize: [36, 36], iconAnchor: [18, 18],
             });
-
             const marker = L.marker([courier.lat, courier.lng], { icon })
                 .addTo(map)
                 .bindPopup(`<strong>${courier.name}</strong><br>${courier.status}`);
-
             courierMarkers.set(courier.id, marker);
         } else {
             const marker = courierMarkers.get(courier.id);
@@ -255,31 +186,23 @@ async function updateCouriers() {
         }
 
         const target = getCourierTarget(courier);
-
         if (target) {
-            const points = [
-                [courier.lat, courier.lng],
-                [target.lat,  target.lng],
-            ];
-
+            const points = [[courier.lat, courier.lng], [target.lat, target.lng]];
             if (!courierLines.has(courier.id)) {
-                const line = L.polyline(points, ROUTE_LINE_STYLE).addTo(map);
-                courierLines.set(courier.id, line);
+                courierLines.set(courier.id, L.polyline(points, ROUTE_LINE_STYLE).addTo(map));
             } else {
                 courierLines.get(courier.id).setLatLngs(points);
             }
-        } else {
-            if (courierLines.has(courier.id)) {
-                map.removeLayer(courierLines.get(courier.id));
-                courierLines.delete(courier.id);
-            }
+        } else if (courierLines.has(courier.id)) {
+            map.removeLayer(courierLines.get(courier.id));
+            courierLines.delete(courier.id);
         }
     }
 }
 
 function getCourierTarget(courier) {
     if (courier.status === 'heading_to_restaurant') return RESTAURANT;
-    if (courier.status === 'heading_to_customer') return courier.order?.coords ?? null;
+    if (courier.status === 'heading_to_customer')   return courier.order?.coords ?? null;
     return null;
 }
 
@@ -290,10 +213,4 @@ function startApp() {
     setInterval(loadOrders, 1_000);
     updateCouriers();
     setInterval(updateCouriers, 1000);
-}
-
-if (getToken()) {
-    startApp();
-} else {
-    showLogin();
 }
