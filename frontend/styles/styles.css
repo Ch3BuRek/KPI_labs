@@ -86,6 +86,12 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   border-bottom: 1px solid var(--border);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .cart-btn {
   background: var(--text);
   color: #fff;
@@ -93,6 +99,90 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   padding: 6px 12px;
 }
 .cart-btn:hover { background: var(--navy); }
+
+.auth-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  font-weight: 600;
+}
+.auth-btn:hover { background: var(--bg); }
+.auth-btn.logged-in {
+  background: var(--brand-pale);
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+
+/*-----------------------------------------------------------------------*/
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.auth-box {
+  position: relative;
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 28px 28px 24px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.auth-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-3);
+  line-height: 1;
+  padding: 2px 6px;
+}
+.auth-close:hover { color: var(--text); }
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+.auth-tab.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.auth-tab:hover:not(.active) { color: var(--text); }
+
+.auth-box input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+}
+.auth-box input:focus { border-color: var(--brand); }
 
 /*-----------------------------------------------------------------------*/
 .restaurant-hero {

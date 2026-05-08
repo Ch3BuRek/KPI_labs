@@ -10,10 +10,27 @@
 
 <header class="header">
     <div class="header-logo">logo</div>
-    <button id="cart-btn" class="cart-btn">
-        Cart (<span id="cart-count">0</span>)
-    </button>
+    <div class="header-actions">
+        <button id="auth-btn" class="auth-btn">Увійти</button>
+        <button id="cart-btn" class="cart-btn">
+            Cart (<span id="cart-count">0</span>)
+        </button>
+    </div>
 </header>
+
+<div id="auth-modal" class="auth-modal hidden">
+    <div class="auth-box">
+        <button id="auth-close" class="auth-close">&times;</button>
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Увійти</button>
+            <button class="auth-tab" data-tab="register">Реєстрація</button>
+        </div>
+        <input id="auth-username" type="text" placeholder="Ім'я користувача" autocomplete="username"/>
+        <input id="auth-password" type="password" placeholder="Пароль" autocomplete="current-password"/>
+        <button id="auth-submit" class="btn-primary">Увійти</button>
+        <p id="auth-error" class="login-error"></p>
+    </div>
+</div>
 
 <div class="restaurant-hero">
     <div class="restaurant-info">

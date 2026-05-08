@@ -1,11 +1,13 @@
 const $ = id => document.getElementById(id);
 
+//----------------------------------------------------------------------
 export function initCustomerAuth() {
     let activeTab = 'login';
+    let onGranted = null;
 
     const getToken = () => localStorage.getItem('customer_token');
     const getUsername = () => localStorage.getItem('customer_username');
-    const header = () => { const t = getToken(); return t ? { Authorization: t } : {}; };
+    const header = () => { const t = getToken(); return t ? { Authorization: `Bearer ${t}` } : {}; };
 
     function save(token, username) {
         localStorage.setItem('customer_token', token);
@@ -19,9 +21,8 @@ export function initCustomerAuth() {
 
     function updateUI() {
         const name = getUsername();
-
-        $('auth-btn').textContent = name || 'Увійти';
-        $('auth-btn').classList.add('logged-in');
+        $('auth-btn').textContent = name ?? 'Увійти';
+        $('auth-btn').classList.toggle('logged-in', !!name);
     }
 
     function showModal() {
@@ -41,7 +42,7 @@ export function initCustomerAuth() {
     function setTab(tab) {
         activeTab = tab;
         document.querySelectorAll('.auth-tab').forEach(b =>
-            b.classList.toggle('active', b.dataset.tab = tab)
+            b.classList.toggle('active', b.dataset.tab === tab)
         );
         $('auth-submit').textContent = tab === 'login' ? 'Увійти' : 'Зареєструватись';
         $('auth-error').textContent = '';
@@ -50,33 +51,28 @@ export function initCustomerAuth() {
     async function submit() {
         const username = $('auth-username').value.trim();
         const password = $('auth-password').value;
-        if (!username || !password) { $('auth-error').textContent = 'заповніть всі поля'; return; }
+        if (!username || !password) { $('auth-error').textContent = 'Заповніть всі поля'; return; }
 
         const url = activeTab === 'login' ? '/auth/login' : '/auth/register';
         try {
-            const res = await fetch(url, {
-                method: 'POST',
-                body: {
-                    username,
-                    password
-                }
+            const res  = await fetch(url, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ username, password }),
             });
+            const data = await res.json();
+            if (!res.ok) { $('auth-error').textContent = data.error ?? 'Помилка'; return; }
 
-            const data = res.json();
-
-            if (!res.ok) {
-                $('auth-error').textContent = data.error ?? 'помилка';
-                return;
-            }
-
-            alert('увійшли!');
+            save(data.token, username);
+            updateUI();
+            const cb = onGranted;
+            onGranted = null;
             hideModal();
+            cb?.();
         } catch {
-            $('auth-error').textContent = "помилка з'єднання";
+            $('auth-error').textContent = "Помилка з'єднання";
         }
     }
-
-    
 
     document.querySelectorAll('.auth-tab').forEach(b =>
         b.addEventListener('click', () => setTab(b.dataset.tab))
@@ -93,17 +89,11 @@ export function initCustomerAuth() {
         getToken,
         header,
         updateUI,
-
         requireAuth(cb) {
-            if (!getToken()) {
-                cb();
-                return;
-            }
-
+            if (getToken()) { cb(); return; }
             onGranted = cb;
-
             showModal();
-        }
+        },
     };
 }
 

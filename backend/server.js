@@ -4,7 +4,7 @@ import { menu, categories } from './data.js';
 import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './service/order.js';
 import { startSimulation } from './service/simulate.js';
 import { getCouriers } from './service/couriers.js';
-import { authMiddleware, requireRole, generateToken } from './feautures/auth.js';
+import { authMiddleware, requireRole, generateToken } from './feautures/proxy.js';
 
 const USERS = {
     admin: { password: 'admin123', role: 'admin' },
