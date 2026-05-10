@@ -214,3 +214,9 @@ function startApp() {
     updateCouriers();
     setInterval(updateCouriers, 1000);
 }
+
+if (auth.getToken()) {
+    startApp();
+} else {
+    auth.showLogin();
+}

@@ -145,13 +145,47 @@ function fetchTotals() {
 }
 
 //----------------------------------------------------------------------
+const STEPS = [
+    { key: 'placed',    label: 'Прийнято'     },
+    { key: 'confirmed', label: 'Підтверджено' },
+    { key: 'preparing', label: 'Готується'    },
+    { key: 'ready',     label: 'Готово'       },
+    { key: 'delivered', label: 'Доставлено'   },
+];
+
+function updateProgress(status) {
+    const idx = STEPS.findIndex(s => s.key === status);
+    STEPS.forEach((step, i) => {
+        const el = document.getElementById(`step-${step.key}`);
+        if (!el) return;
+        el.classList.remove('done', 'active', 'pending', 'cancelled');
+        if (status === 'cancelled') {
+            el.classList.add('cancelled');
+        } else {
+            el.classList.add(i < idx ? 'done' : i === idx ? 'active' : 'pending');
+        }
+    });
+}
+
+function connectOrderStream(orderId) {
+    const es = new EventSource(`/data/orders/${orderId}/stream`);
+    es.onmessage = e => {
+        const order = JSON.parse(e.data);
+        updateProgress(order.status);
+        if (order.status === 'delivered' || order.status === 'cancelled') es.close();
+    };
+    es.onerror = () => es.close();
+}
+
+//----------------------------------------------------------------------
 $('place-order-btn').addEventListener('click', () => auth.requireAuth(placeOrder));
 
 async function placeOrder() {
     const address = $('address-input').value.trim();
 
+    $('order-error').textContent = '';
     $('place-order-btn').disabled = true;
-    $('place-order-btn').textContent = 'Обробляємо ваше замовлення...';
+    $('place-order-btn').textContent = 'Обробляємо...';
 
     try {
         const res = await fetch('/data/orders', {
@@ -163,35 +197,48 @@ async function placeOrder() {
         if (res.status === 401) { auth.requireAuth(placeOrder); return; }
 
         const order = await res.json();
-        showConfirmation(order);
         cart = [];
-        renderCart();
+        $('cart-count').textContent = '0';
+        showConfirmation(order);
     } catch {
-        alert('Fail');
+        $('order-error').textContent = 'Не вдалось оформити замовлення. Спробуйте ще раз.';
+        $('place-order-btn').disabled = false;
     } finally {
         $('place-order-btn').textContent = 'Замовити';
     }
 }
 
 function showConfirmation(order) {
-    const panel = $('cart-panel');
-    panel.innerHTML = `
+    $('cart-panel').innerHTML = `
         <div class="confirmation">
             <h3>Замовлення прийнято!</h3>
-            <p class="order-id">Номер замовлення: <strong>${order.id}</strong></p>
-            <p>Доставка: ${order.deliveryAddress}</p>
+            <p class="order-id">№ <strong>${order.id}</strong></p>
+            <p class="order-address">${order.deliveryAddress}</p>
+
+            <div class="progress-track">
+                ${STEPS.map(s => `
+                    <div class="progress-step pending" id="step-${s.key}">
+                        <div class="step-dot"></div>
+                        <div class="step-label">${s.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
             <div class="order-summary">
                 ${order.cart.map(i => `
                     <div class="conf-item">
-                        <span>${i.name} x ${i.quantity}</span>
+                        <span>${i.name} × ${i.quantity}</span>
                         <span>$${(i.price * i.quantity).toFixed(2)}</span>
                     </div>
                 `).join('')}
             </div>
-            <div class="conf-total">Сума: $${order.total.toFixed(2)}</div>
+            <div class="conf-total">Всього: $${order.total.toFixed(2)}</div>
             <button id="new-order-btn" class="btn-primary">Замовити ще раз</button>
         </div>
     `;
+
+    updateProgress(order.status);
+    connectOrderStream(order.id);
     $('new-order-btn').addEventListener('click', () => location.reload());
 }
 

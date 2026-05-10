@@ -653,3 +653,95 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   font-size: 13px;
   min-height: 16px;
 }
+
+/*-----------------------------------------------------------------------*/
+.order-error {
+  color: var(--brand);
+  font-size: 12px;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+/*-----------------------------------------------------------------------*/
+.order-address {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+
+.progress-track {
+  display: flex;
+  align-items: flex-start;
+  margin: 16px 0 8px;
+}
+
+.progress-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* connecting line */
+.progress-step + .progress-step::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+  transition: background 0.4s;
+}
+
+.progress-step.done + .progress-step::before,
+.progress-step.active + .progress-step::before {
+  background: var(--brand);
+}
+
+.step-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.progress-step.done .step-dot {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.progress-step.active .step-dot {
+  background: var(--brand);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-pale);
+  animation: step-pulse 1.4s ease-in-out infinite;
+}
+
+.progress-step.cancelled .step-dot {
+  background: var(--border);
+  border-color: var(--border);
+}
+
+@keyframes step-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--brand-pale); }
+  50%       { box-shadow: 0 0 0 7px var(--brand-pale); }
+}
+
+.step-label {
+  font-size: 10px;
+  text-align: center;
+  margin-top: 5px;
+  color: var(--text-3);
+  line-height: 1.2;
+  max-width: 52px;
+}
+
+.progress-step.done   .step-label { color: var(--brand-dark); font-weight: 600; }
+.progress-step.active .step-label { color: var(--brand);      font-weight: 700; }
