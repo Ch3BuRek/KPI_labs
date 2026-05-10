@@ -1,7 +1,7 @@
 import { initCustomerAuth } from './auth.js';
 
 const $ = id => document.getElementById(id);
-let cart = [], menuData = [];
+let cart = [], menuData = [], lastOrderCart = [];
 
 const auth = initCustomerAuth();
 
@@ -172,13 +172,76 @@ function connectOrderStream(orderId) {
     es.onmessage = e => {
         const order = JSON.parse(e.data);
         updateProgress(order.status);
-        if (order.status === 'delivered' || order.status === 'cancelled') es.close();
+        if (order.status === 'delivered') {
+            es.close();
+            setTimeout(showDeliveredScreen, 700);
+        } else if (order.status === 'cancelled') {
+            es.close();
+        }
     };
     es.onerror = () => es.close();
 }
 
+function showDeliveredScreen() {
+    const pd = $('post-delivery');
+    if (!pd) return;
+    pd.innerHTML = `
+        <p class="rating-prompt">Як вам замовлення?</p>
+        <div class="star-rating" id="star-rating">
+            ${[1,2,3,4,5].map(v => `<button class="star" data-v="${v}">★</button>`).join('')}
+        </div>
+        <p id="rating-thanks" class="rating-thanks"></p>
+        <button id="order-again-btn" class="btn-primary">Замовити знову</button>
+    `;
+
+    const stars = pd.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('mouseover', () => {
+            const v = +star.dataset.v;
+            stars.forEach(s => s.classList.toggle('hover', +s.dataset.v <= v));
+        });
+        star.addEventListener('mouseout', () => stars.forEach(s => s.classList.remove('hover')));
+        star.addEventListener('click', () => {
+            const v = +star.dataset.v;
+            stars.forEach(s => {
+                s.classList.remove('hover');
+                s.classList.toggle('selected', +s.dataset.v <= v);
+            });
+            $('rating-thanks').textContent = v >= 4
+                ? 'Дякуємо <3'
+                : 'Дякуємо за відгук!.';
+        });
+    });
+
+    $('order-again-btn').addEventListener('click', restoreCartView);
+}
+
+function restoreCartView() {
+    $('cart-panel').innerHTML = `
+        <h3 class="cart-title">Ваше замовлення</h3>
+        <div class="field-group">
+            <label for="address-input">Адреса доставки</label>
+            <input id="address-input" type="text" placeholder="Введіть адресу доставки" value="Контрактова площа, 123"/>
+        </div>
+        <div id="cart-items" class="cart-items"></div>
+        <div id="cart-totals" class="cart-totals hidden"></div>
+        <button id="place-order-btn" class="btn-primary" disabled>Замовити</button>
+        <p id="order-error" class="order-error"></p>
+    `;
+    attachCartListeners();
+    cart = lastOrderCart.map(i => ({ ...i }));
+    renderCart();
+}
+
 //----------------------------------------------------------------------
-$('place-order-btn').addEventListener('click', () => auth.requireAuth(placeOrder));
+function attachCartListeners() {
+    $('place-order-btn').addEventListener('click', () => auth.requireAuth(placeOrder));
+    $('address-input').addEventListener('input', () => {
+        $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
+    });
+}
+
+attachCartListeners();
 
 async function placeOrder() {
     const address = $('address-input').value.trim();
@@ -197,6 +260,7 @@ async function placeOrder() {
         if (res.status === 401) { auth.requireAuth(placeOrder); return; }
 
         const order = await res.json();
+        lastOrderCart = [...cart];
         cart = [];
         $('cart-count').textContent = '0';
         showConfirmation(order);
@@ -224,24 +288,21 @@ function showConfirmation(order) {
                 `).join('')}
             </div>
 
-            <div class="order-summary">
-                ${order.cart.map(i => `
-                    <div class="conf-item">
-                        <span>${i.name} × ${i.quantity}</span>
-                        <span>$${(i.price * i.quantity).toFixed(2)}</span>
-                    </div>
-                `).join('')}
+            <div id="post-delivery">
+                <div class="order-summary">
+                    ${order.cart.map(i => `
+                        <div class="conf-item">
+                            <span>${i.name} x ${i.quantity}</span>
+                            <span>$${(i.price * i.quantity).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="conf-total">Всього: $${order.total.toFixed(2)}</div>
             </div>
-            <div class="conf-total">Всього: $${order.total.toFixed(2)}</div>
-            <button id="new-order-btn" class="btn-primary">Замовити ще раз</button>
         </div>
     `;
 
     updateProgress(order.status);
     connectOrderStream(order.id);
-    $('new-order-btn').addEventListener('click', () => location.reload());
 }
 
-$('address-input').addEventListener('input', () => {
-    $('place-order-btn').disabled = !$('address-input').value.trim() || !cart.length;
-});

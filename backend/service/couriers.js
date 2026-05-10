@@ -9,7 +9,7 @@ const couriers = [
 
 export function getCouriers() { return couriers; }
 
-function stepToward(courier, target, speed = 0.0003) {
+function stepToward(courier, target, speed = 0.0009) {
     const dlat = target.lat - courier.lat;
     const dlng = target.lng - courier.lng;
     const dist  = Math.sqrt(dlat * dlat + dlng * dlng);
