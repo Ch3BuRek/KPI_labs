@@ -26,17 +26,58 @@ async function* filter(source, predicate) {
     }
 }
 
+async function* transform(source, mapFn) {
+    for await (const record of source) {
+        yield mapFn(record);
+    }
+}
+
+async function* batch(source, size) {
+    let chunk = [];
+    for await (const record of source) {
+        chunk.push(record);
+        if (chunk.length === size) {
+            yield chunk;
+            chunk = [];
+        }
+    }
+    if (chunk.length > 0) yield chunk;
+}
+
+async function* take(source, limit) {
+    let count = 0;
+    for await (const record of source) {
+        yield record;
+        if (++count >= limit) return;
+    }
+}
+
+async function* tap(source, fn) {
+    for await (const record of source) {
+        fn(record);
+        yield record;
+    }
+}
+
 (async () => {
 
-    const source = logDataSource(10);
+    const source = logDataSource(100);
 
-    const errorsOnly = filter(
-        source,
-        record => record.level === "ERROR"
+    const limited = take(source, 5);
+
+    for await (const item of limited) {
+        console.log(item.id);
+    }
+
+    const source2 = logDataSource(5);
+
+    const pipeline = tap(
+        source2,
+        r => console.log("DEBUG:", r.id)
     );
 
-    for await (const record of errorsOnly) {
-        console.log(record);
+    for await (const record of pipeline) {
+        console.log("FINAL:", record.id);
     }
 
 })();
