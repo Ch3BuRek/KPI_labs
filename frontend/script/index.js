@@ -17,6 +17,13 @@ async function init() {
     renderCategories(categories);
     renderMenu(categories);
     auth.updateUI();
+
+    const saved = sessionStorage.getItem('activeOrder');
+    if (saved) {
+        const order = JSON.parse(saved);
+        lastOrderCart = order.cart ?? [];
+        showConfirmation(order);
+    }
 }
 
 init();
@@ -174,9 +181,12 @@ function connectOrderStream(orderId) {
         updateProgress(order.status);
         if (order.status === 'delivered') {
             es.close();
+            sessionStorage.removeItem('activeOrder');
             setTimeout(showDeliveredScreen, 700);
         } else if (order.status === 'cancelled') {
             es.close();
+            sessionStorage.removeItem('activeOrder');
+            showCancelledScreen();
         }
     };
     es.onerror = () => es.close();
@@ -263,6 +273,7 @@ async function placeOrder() {
         lastOrderCart = [...cart];
         cart = [];
         $('cart-count').textContent = '0';
+        sessionStorage.setItem('activeOrder', JSON.stringify(order));
         showConfirmation(order);
     } catch {
         $('order-error').textContent = 'Не вдалось оформити замовлення. Спробуйте ще раз.';

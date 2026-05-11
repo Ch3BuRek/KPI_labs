@@ -27,8 +27,8 @@ async function loadOrders() {
         const orders = await res.json();
         renderOrders(orders);
         updateMap(orders);
-    } catch {
-        document.querySelector('.kitchen-grid').innerHTML = '<p>Failed to load orders</p>';
+    } catch (err) {
+        console.warn('loadOrders failed:', err.message);
     }
 }
 
@@ -36,12 +36,10 @@ function renderOrders(orders) {
     const main   = document.querySelector('.kitchen-grid');
     const sorted = [...orders].sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
 
-    main.innerHTML = `
-        <div class="orders-grid">
-            ${sorted.map(renderOrderCard).join('')}
-        </div>
-    `;
+    const next = `<div class="orders-grid">${sorted.map(renderOrderCard).join('')}</div>`;
+    if (main.innerHTML === next) return;
 
+    main.innerHTML = next;
     main.querySelectorAll('.advance-btn').forEach(btn => {
         btn.addEventListener('click', () => advanceStatus(btn.dataset.id, btn.dataset.next));
     });
