@@ -5,6 +5,7 @@ import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from
 import { startSimulation } from './service/simulate.js';
 import { getCouriers } from './service/couriers.js';
 import { authMiddleware, requireRole, generateToken } from './feautures/proxy.js';
+import { filter, take, transform, abortable, collect } from './feautures/stream.js';
 
 const USERS = {
     admin: { password: 'admin123', role: 'admin' },
@@ -64,8 +65,39 @@ app.patch('/data/orders/:id/status', authMiddleware, requireRole('admin'), (req,
 });
 
 //----------------------------------------------------------------------
-app.get('/data/orders', authMiddleware, requireRole('admin'), (req, res) => {
-    res.json(getAllOrders());
+app.get('/data/orders/stats', authMiddleware, requireRole('admin'), async (req, res) => {
+    const ac = new AbortController();
+    req.on('close', () => ac.abort());
+
+    async function* source() { for (const o of getAllOrders()) yield o; }
+
+    const ACTIVE = ['placed', 'confirmed', 'preparing', 'ready'];
+
+    const orders  = await collect(abortable(source(), ac.signal));
+    const active  = await collect(filter((async function*() { yield* orders; })(), o => ACTIVE.includes(o.status)));
+    const done    = await collect(filter((async function*() { yield* orders; })(), o => o.status === 'delivered'));
+    const revenue = await collect(transform((async function*() { yield* done; })(), o => o.total));
+
+    res.json({
+        total:     orders.length,
+        active:    active.length,
+        completed: done.length,
+        revenue:   revenue.reduce((s, v) => s + v, 0),
+    });
+});
+
+app.get('/data/orders', authMiddleware, requireRole('admin'), async (req, res) => {
+    const { status, limit } = req.query;
+    const ac = new AbortController();
+    req.on('close', () => ac.abort());
+
+    async function* source() { for (const o of getAllOrders()) yield o; }
+
+    let pipe = abortable(source(), ac.signal);
+    if (status) pipe = filter(pipe, o => o.status === status);
+    if (limit)  pipe = take(pipe, parseInt(limit));
+
+    res.json(await collect(pipe));
 });
 
 app.get('/data/categories', (req, res) => {

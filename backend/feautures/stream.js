@@ -1,38 +1,16 @@
-async function* logDataSource(totalRecords, delayMs = 0) {
-    const levels = ["INFO", "WARN", "ERROR"];
-
-    for (let i = 1; i <= totalRecords; i++) {
-
-        if (delayMs > 0) {
-            await new Promise(r => setTimeout(r, delayMs));
-        }
-
-        yield {
-            id: i,
-            timestamp: new Date().toISOString(),
-            level: levels[Math.floor(Math.random() * levels.length)],
-            message: `#${i} W`
-        };
-    }
-}
-
-async function* filter(source, predicate) {
+export async function* filter(source, predicate) {
     for await (const record of source) {
-
-        if (predicate(record)) {
-            yield record;
-        }
-
+        if (predicate(record)) yield record;
     }
 }
 
-async function* transform(source, mapFn) {
+export async function* transform(source, mapFn) {
     for await (const record of source) {
         yield mapFn(record);
     }
 }
 
-async function* batch(source, size) {
+export async function* batch(source, size) {
     let chunk = [];
     for await (const record of source) {
         chunk.push(record);
@@ -44,7 +22,7 @@ async function* batch(source, size) {
     if (chunk.length > 0) yield chunk;
 }
 
-async function* take(source, limit) {
+export async function* take(source, limit) {
     let count = 0;
     for await (const record of source) {
         yield record;
@@ -52,32 +30,23 @@ async function* take(source, limit) {
     }
 }
 
-async function* tap(source, fn) {
+export async function* tap(source, fn) {
     for await (const record of source) {
         fn(record);
         yield record;
     }
 }
 
-(async () => {
-
-    const source = logDataSource(100);
-
-    const limited = take(source, 5);
-
-    for await (const item of limited) {
-        console.log(item.id);
+export async function* abortable(source, signal) {
+    for await (const record of source) {
+        if (signal.aborted) return;
+        yield record;
     }
+}
 
-    const source2 = logDataSource(5);
 
-    const pipeline = tap(
-        source2,
-        r => console.log("DEBUG:", r.id)
-    );
-
-    for await (const record of pipeline) {
-        console.log("FINAL:", record.id);
-    }
-
-})();
+export async function collect(pipeline) {
+    const results = [];
+    for await (const item of pipeline) results.push(item);
+    return results;
+}

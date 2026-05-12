@@ -205,10 +205,23 @@ function getCourierTarget(courier) {
 }
 
 //----------------------------------------------------------------------
+async function loadStats() {
+    const res = await fetch('/data/orders/stats', { headers: auth.header() });
+    if (res.status === 401) { auth.showLogin(); return; }
+    const s = await res.json();
+
+    $('s-total').textContent     = s.total;
+    $('s-active').textContent    = s.active;
+    $('s-completed').textContent = s.completed;
+    $('s-revenue').textContent   = `$${s.revenue.toFixed(2)}`;
+}
+
 function startApp() {
     initMap();
     loadOrders();
+    loadStats();
     setInterval(loadOrders, 1_000);
+    setInterval(loadStats,  3_000);
     updateCouriers();
     setInterval(updateCouriers, 1000);
 }
