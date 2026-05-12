@@ -4,21 +4,38 @@ import { menu, categories } from './data.js';
 import { createOrder, getOrder, getAllOrders, updateOrderStatus, orderBus } from './service/order.js';
 import { startSimulation } from './service/simulate.js';
 import { getCouriers } from './service/couriers.js';
-import { authMiddleware, requireRole, generateToken } from './feautures/proxy.js';
+import { AuthProxy, JWT, RateLimiter, requireRole, generateToken } from './feautures/proxy.js';
 import { filter, take, transform, abortable, collect } from './feautures/stream.js';
 
+//----------------------------------------------------------------------
+const apiAuth = new AuthProxy({
+    method:      new JWT(),
+    rateLimiter: new RateLimiter(10_000, 60_000),
+}).middleware();
+
+const loginLimiter = (() => {
+    const limiter = new RateLimiter(10, 60_000);
+    return (req, res, next) => {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() ?? req.ip ?? 'unknown';
+        if (!limiter.check(ip)) return res.status(429).json({ error: 'Too many requests' });
+        next();
+    };
+})();
+
+//----------------------------------------------------------------------
 const USERS = {
     admin: { password: 'admin123', role: 'admin' },
 };
 
 const customers = new Map();
 
+//----------------------------------------------------------------------
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static('frontend'));
 
-app.post('/auth/login', (req, res) => {
+app.post('/auth/login', loginLimiter, (req, res) => {
     const { username, password } = req.body ?? {};
     const user = USERS[username] ?? customers.get(username);
     if (!user || user.password !== password) {
@@ -28,7 +45,7 @@ app.post('/auth/login', (req, res) => {
     res.json({ token, role: user.role });
 });
 
-app.post('/auth/register', (req, res) => {
+app.post('/auth/register', loginLimiter, (req, res) => {
     const { username, password } = req.body ?? {};
     if (!username?.trim() || !password) {
         return res.status(400).json({ error: 'Username and password required' });
@@ -46,7 +63,7 @@ app.get('/data/menu', (req, res) => {
 });
 
 //----------------------------------------------------------------------
-app.post('/data/orders', authMiddleware, requireRole('customer'), (req, res) => {
+app.post('/data/orders', apiAuth, requireRole('customer'), (req, res) => {
     try {
         const order = createOrder({ ...req.body, customerName: req.user.username });
         res.json(order);
@@ -55,7 +72,7 @@ app.post('/data/orders', authMiddleware, requireRole('customer'), (req, res) => 
     }
 });
 
-app.patch('/data/orders/:id/status', authMiddleware, requireRole('admin'), (req, res) => {
+app.patch('/data/orders/:id/status', apiAuth, requireRole('admin'), (req, res) => {
     try {
         const order = updateOrderStatus(req.params.id, req.body.status);
         res.json(order);
@@ -65,7 +82,7 @@ app.patch('/data/orders/:id/status', authMiddleware, requireRole('admin'), (req,
 });
 
 //----------------------------------------------------------------------
-app.get('/data/orders/stats', authMiddleware, requireRole('admin'), async (req, res) => {
+app.get('/data/orders/stats', apiAuth, requireRole('admin'), async (req, res) => {
     const ac = new AbortController();
     req.on('close', () => ac.abort());
 
@@ -86,7 +103,7 @@ app.get('/data/orders/stats', authMiddleware, requireRole('admin'), async (req, 
     });
 });
 
-app.get('/data/orders', authMiddleware, requireRole('admin'), async (req, res) => {
+app.get('/data/orders', apiAuth, requireRole('admin'), async (req, res) => {
     const { status, limit } = req.query;
     const ac = new AbortController();
     req.on('close', () => ac.abort());
@@ -104,7 +121,7 @@ app.get('/data/categories', (req, res) => {
     res.json(categories);
 });
 
-app.get('/data/couriers', authMiddleware, requireRole('admin'), (req, res) => {
+app.get('/data/couriers', apiAuth, requireRole('admin'), (req, res) => {
     res.json(getCouriers());
 });
 

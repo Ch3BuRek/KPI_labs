@@ -24,6 +24,7 @@ async function loadOrders() {
     try {
         const res = await fetch('/data/orders', { headers: auth.header() });
         if (res.status === 401) { auth.showLogin(); return; }
+        if (!res.ok) return;
         const orders = await res.json();
         renderOrders(orders);
         updateMap(orders);
@@ -32,14 +33,19 @@ async function loadOrders() {
     }
 }
 
+const renderedState = new Map();
+
 function renderOrders(orders) {
+    const changed = orders.length !== renderedState.size
+        || orders.some(o => renderedState.get(o.id) !== o.status);
+    if (!changed) return;
+
+    renderedState.clear();
+    orders.forEach(o => renderedState.set(o.id, o.status));
+
     const main   = document.querySelector('.kitchen-grid');
     const sorted = [...orders].sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
-
-    const next = `<div class="orders-grid">${sorted.map(renderOrderCard).join('')}</div>`;
-    if (main.innerHTML === next) return;
-
-    main.innerHTML = next;
+    main.innerHTML = `<div class="orders-grid">${sorted.map(renderOrderCard).join('')}</div>`;
     main.querySelectorAll('.advance-btn').forEach(btn => {
         btn.addEventListener('click', () => advanceStatus(btn.dataset.id, btn.dataset.next));
     });
@@ -161,6 +167,7 @@ function initMap() {
 async function updateCouriers() {
     const res = await fetch('/data/couriers', { headers: auth.header() });
     if (res.status === 401) { auth.showLogin(); return; }
+    if (!res.ok) return;
     const couriers = await res.json();
 
     for (const courier of couriers) {
@@ -208,6 +215,7 @@ function getCourierTarget(courier) {
 async function loadStats() {
     const res = await fetch('/data/orders/stats', { headers: auth.header() });
     if (res.status === 401) { auth.showLogin(); return; }
+    if (!res.ok) return;
     const s = await res.json();
 
     $('s-total').textContent     = s.total;
@@ -216,14 +224,19 @@ async function loadStats() {
     $('s-revenue').textContent   = `$${s.revenue.toFixed(2)}`;
 }
 
+function poll(fn, interval) {
+    async function run() {
+        await fn();
+        setTimeout(run, interval);
+    }
+    run();
+}
+
 function startApp() {
     initMap();
-    loadOrders();
-    loadStats();
-    setInterval(loadOrders, 1_000);
-    setInterval(loadStats,  3_000);
-    updateCouriers();
-    setInterval(updateCouriers, 1000);
+    poll(loadOrders, 1_000);
+    poll(updateCouriers, 1_000);
+    poll(loadStats, 3_000);
 }
 
 if (auth.getToken()) {
