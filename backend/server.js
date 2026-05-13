@@ -6,6 +6,15 @@ import { startSimulation } from './service/simulate.js';
 import { getCouriers } from './service/couriers.js';
 import { AuthProxy, JWT, RateLimiter, requireRole, generateToken } from './feautures/proxy.js';
 import { filter, take, transform, abortable, collect } from './feautures/stream.js';
+import { Logger, jsonFormatter, consoleTransport, fileTransport, log } from './feautures/logger.js';
+
+const orderLogger = new Logger({
+    minLevel: 'INFO',
+    formatter: jsonFormatter,
+    transports: [consoleTransport, fileTransport('logs/orders.log')],
+});
+
+const logErrors = log('ERROR');
 
 //----------------------------------------------------------------------
 const apiAuth = new AuthProxy({

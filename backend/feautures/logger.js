@@ -7,24 +7,28 @@ export const LEVELS = {
     ERROR: 2,
 };
 
-export function textFormatter(entry) {
-    return `[${entry.timestamp}] [${entry.level}] ${entry.message}`;
+export function textFormatter({ timestamp, level, name, args, result, error, duration }) {
+    const parts = [`[${timestamp}] [${level}] ${name}`];
+    if (duration !== undefined) parts.push(`(${duration}ms)`);
+    if (args !== undefined) parts.push(`args=${JSON.stringify(args)}`);
+    if (result !== undefined) parts.push(`=> ${JSON.stringify(result)}`);
+    if (error) parts.push(`THREW ${error.message}`);
+    return parts.join('  ');
 }
 
 export function jsonFormatter(entry) {
-    return JSON.stringify(entry);
+    const out = { ...entry };
+    if (out.error) out.error = { message: out.error.message, stack: out.error.stack };
+    return JSON.stringify(out);
 }
 
 export function consoleTransport(entry, formatted) {
-    console.log(formatted);
+    (entry.level === 'ERROR' ? console.error : console.log)(formatted);
 }
 
 export function fileTransport(filePath) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-
-    return (entry, formatted) => {
-        fs.appendFileSync(filePath, formatted + '\n');
-    };
+    return (_entry, formatted) => fs.appendFileSync(filePath, formatted + '\n');
 }
 
 export class Logger {
@@ -58,35 +62,40 @@ export class Logger {
         }
     }
 
-    log(level = 'INFO') {
+    log(levelOrOpts = 'INFO') {
+        const opts = typeof levelOrOpts === 'string' ? { level: levelOrOpts } : levelOrOpts;
+        const { level = 'INFO', timing = false } = opts;
+        const errOnly = level === 'ERROR';
         const self = this;
 
-        return function (fn) {
+        return function wrap(fn) {
+            const name = fn.name || 'anonymous';
             const isAsync = fn.constructor.name === 'AsyncFunction';
 
             if (isAsync) {
                 return async function (...args) {
-                    const result = await fn(...args);
-
-                    self.write(level, {
-                        name: fn.name,
-                        args,
-                        result,
-                    });
-
+                    const start = Date.now();
+                    const result = await fn.apply(this, args);
+                    if (!errOnly) {
+                        self.write(level, {
+                            name, args, result,
+                            ...(timing && { duration: Date.now() - start }),
+                        });
+                    }
                     return result;
                 };
             }
 
             return function (...args) {
-                const result = fn(...args);
+                const start = Date.now();
+                const result = fn.apply(this, args);
 
-                self.write(level, {
-                    name: fn.name,
-                    args,
-                    result,
-                });
-
+                if (!errOnly) {
+                    self.write(level, {
+                        name, args, result,
+                        ...(timing && { duration: Date.now() - start }),
+                    });
+                }
                 return result;
             };
         };
