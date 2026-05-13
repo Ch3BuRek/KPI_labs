@@ -1,21 +1,25 @@
 import fs from 'fs';
 import path from 'path';
 
-const LEVELS = {
+export const LEVELS = {
     DEBUG: 0,
     INFO: 1,
     ERROR: 2,
 };
 
-function textFormatter(entry) {
+export function textFormatter(entry) {
     return `[${entry.timestamp}] [${entry.level}] ${entry.message}`;
 }
 
-function consoleTransport(entry, formatted) {
+export function jsonFormatter(entry) {
+    return JSON.stringify(entry);
+}
+
+export function consoleTransport(entry, formatted) {
     console.log(formatted);
 }
 
-function fileTransport(filePath) {
+export function fileTransport(filePath) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
     return (entry, formatted) => {
@@ -23,7 +27,7 @@ function fileTransport(filePath) {
     };
 }
 
-class Logger {
+export class Logger {
     #minLevel;
     #formatter;
     #transports;
@@ -53,16 +57,44 @@ class Logger {
             transport(entry, formatted);
         }
     }
+
+    log(level = 'INFO') {
+        const self = this;
+
+        return function (fn) {
+            const isAsync = fn.constructor.name === 'AsyncFunction';
+
+            if (isAsync) {
+                return async function (...args) {
+                    const result = await fn(...args);
+
+                    self.write(level, {
+                        name: fn.name,
+                        args,
+                        result,
+                    });
+
+                    return result;
+                };
+            }
+
+            return function (...args) {
+                const result = fn(...args);
+
+                self.write(level, {
+                    name: fn.name,
+                    args,
+                    result,
+                });
+
+                return result;
+            };
+        };
+    }
 }
 
-const logger = new Logger({
-    transports: [
-        consoleTransport,
-        fileTransport('../logs/orders.log'),
-    ],
-});
+export const logger = new Logger();
 
-logger.write('INFO', {
-    message: 'user login',
-    userId: 15,
-});
+export function log(level) {
+    return logger.log(level);
+}
