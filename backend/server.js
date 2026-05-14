@@ -6,15 +6,27 @@ import { startSimulation } from './service/simulate.js';
 import { getCouriers } from './service/couriers.js';
 import { AuthProxy, JWT, RateLimiter, requireRole, generateToken } from './feautures/proxy.js';
 import { filter, take, transform, abortable, collect } from './feautures/stream.js';
-import { Logger, jsonFormatter, consoleTransport, fileTransport, log } from './feautures/logger.js';
+import { Logger, jsonFormatter, consoleTransport, fileTransport, sseTransport, log, logger } from './feautures/logger.js';
+
+//----------------------------------------------------------------------
+const activityLog = [];
+const MAX_ACTIVITY = 100;
+const activityClients = new Set();
+
+function publishActivity(entry) {
+    activityLog.push(entry);
+    if (activityLog.length > MAX_ACTIVITY) activityLog.shift();
+    const data = `data: ${JSON.stringify(entry)}\n\n`;
+    for (const res of activityClients) res.write(data);
+}
 
 const orderLogger = new Logger({
     minLevel: 'INFO',
     formatter: jsonFormatter,
-    transports: [consoleTransport, fileTransport('logs/orders.log')],
+    transports: [consoleTransport, fileTransport('logs/orders.log'), sseTransport(publishActivity)],
 });
 
-const logErrors = log('ERROR');
+logger.addTransport(sseTransport(publishActivity));
 
 //----------------------------------------------------------------------
 const apiAuth = new AuthProxy({
@@ -75,6 +87,7 @@ app.get('/data/menu', (req, res) => {
 app.post('/data/orders', apiAuth, requireRole('customer'), (req, res) => {
     try {
         const order = createOrder({ ...req.body, customerName: req.user.username });
+        orderLogger.write('INFO', { name: 'placeOrder', result: { id: order.id, total: order.total, customer: order.customerName } });
         res.json(order);
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -156,6 +169,19 @@ app.get('/data/orders/:id/stream', (req, res) => {
     req.on('close', () => orderBus.off('orderUpdate', unsub));
 });
 
+app.get('/data/activity/stream', apiAuth, requireRole('admin'), (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    for (const entry of activityLog) res.write(`data: ${JSON.stringify(entry)}\n\n`);
+
+    activityClients.add(res);
+    req.on('close', () => activityClients.delete(res));
+});
+
 app.listen(3000, () => {
     startSimulation();
+    orderLogger.write('INFO', { name: 'server', result: 'port 3000' });
 });

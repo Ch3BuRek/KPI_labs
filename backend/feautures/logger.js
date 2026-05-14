@@ -26,6 +26,10 @@ export function consoleTransport(entry, formatted) {
     (entry.level === 'ERROR' ? console.error : console.log)(formatted);
 }
 
+export function sseTransport(publish) {
+    return (entry, formatted) => publish({ ...entry, formatted });
+}
+
 export function fileTransport(filePath) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     return (_entry, formatted) => fs.appendFileSync(filePath, formatted + '\n');

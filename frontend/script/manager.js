@@ -232,11 +232,58 @@ function poll(fn, interval) {
     run();
 }
 
+//----------------------------------------------------------------------
+function formatActivityEntry(entry) {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    let msg;
+
+    if (entry.name === '_createOrder' || entry.name === 'placeOrder') {
+        const id = entry.result?.id ?? '?';
+        const total = entry.result?.total ?? '?';
+        const dur = entry.duration != null ? ` (${entry.duration}ms)` : '';
+        msg = `New order <strong>${id}</strong> — $${total}${dur}`;
+
+    } else if (entry.name === '_updateOrderStatus') {
+        const [id, status] = entry.args ?? [];
+        msg = `<strong>${id}</strong> → ${status}`;
+
+    } else if (entry.name === 'server') {
+        msg = typeof entry.result === 'string' ? entry.result : JSON.stringify(entry.result);
+    } else if (entry.level === 'ERROR') {
+        msg = `<strong>${entry.name}</strong> threw: ${entry.error?.message ?? 'unknown'}`;
+    } else {
+        msg = entry.formatted ?? `${entry.name}: ${JSON.stringify(entry.result ?? '')}`;
+    }
+
+    return `<div class="activity-entry activity-${entry.level}">
+        <div class="activity-meta">
+            <span class="activity-time">${time}</span>
+            <span class="activity-level">${entry.level}</span>
+        </div>
+        <span class="activity-msg">${msg}</span>
+    </div>`;
+}
+
+function connectActivityStream() {
+    const log = $('activity-log');
+    const token = auth.getToken();
+    const es = new EventSource(`/data/activity/stream?_auth=${encodeURIComponent(token)}`);
+
+    es.onmessage = e => {
+        const entry = JSON.parse(e.data);
+        log.insertAdjacentHTML('afterbegin', formatActivityEntry(entry));
+        while (log.children.length > 80) log.lastElementChild.remove();
+    };
+    es.onerror = () => es.close();
+}
+
+//----------------------------------------------------------------------
 function startApp() {
     initMap();
     poll(loadOrders, 1_000);
     poll(updateCouriers, 1_000);
     poll(loadStats, 3_000);
+    connectActivityStream();
 }
 
 if (auth.getToken()) {

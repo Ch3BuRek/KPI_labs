@@ -58,6 +58,7 @@ function _createOrder({ cart, customerName, deliveryAddress, coords }) {
 
 function _updateOrderStatus(id, newStatus) {
     const order = orders.get(id);
+    if (!order) throw new Error(`Order ${id} not found`);
 
     order.status = newStatus;
     order.updatedAt = new Date().toISOString();
