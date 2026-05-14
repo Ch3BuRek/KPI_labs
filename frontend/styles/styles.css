@@ -791,3 +791,63 @@ button { font-family: inherit; cursor: pointer; border-radius: 4px; font-size: 1
   text-align: center;
   margin: 16px 0 12px;
 }
+
+/*-----------------------------------------------------------------------*/
+.activity-log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+}
+
+.activity-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: activity-in 0.2s ease;
+}
+.activity-entry:last-child { border-bottom: none; }
+
+@keyframes activity-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.activity-time {
+  font-size: 10px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-level {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.activity-msg { color: var(--text); }
+
+.activity-INFO  { border-left: 3px solid var(--blue); }
+.activity-INFO  .activity-level { background: var(--blue-pale); color: var(--blue-dark); }
+
+.activity-DEBUG { border-left: 3px solid var(--border); }
+.activity-DEBUG .activity-msg   { color: var(--text-3); }
+.activity-DEBUG .activity-level { background: var(--bg); color: var(--text-3); }
+
+.activity-ERROR { border-left: 3px solid var(--brand); background: var(--brand-pale); }
+.activity-ERROR .activity-level { background: var(--brand); color: #fff; }
